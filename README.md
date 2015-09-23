@@ -11,7 +11,10 @@ either read or write from the file until it's finished.
 
 TJFS will be basically just a key-value storage, there is no *directory* concept. The *key* is 
 the path to a file and the *value* is the file content itself. The path will be allowed to 
-contain slashes and tokens between the slashes will be interpreted as directories.
+contain slashes, and tokens between the slashes will be interpreted as directories. Our fs won't 
+implement any security model so having a *directory* as a real object is not necessary in our 
+case. Turning the whole fs into flat key-value storage (instead of a hierarchy) will simplify the
+code.
 
 Each file will consist of chunks (blocks) of equal size. There will always be 2 copies of each 
 chunk in our filesystem to maintain the fault tolerance.
