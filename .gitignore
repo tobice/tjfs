@@ -45,3 +45,5 @@ hs_err_pid*
 ## File-based project format:
 *.ipr
 *.iws
+
+target
