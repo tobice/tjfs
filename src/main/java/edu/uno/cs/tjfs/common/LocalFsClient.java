@@ -6,7 +6,7 @@ import java.nio.file.Path;
 
 import static java.nio.file.StandardCopyOption.*;
 
-public class LocalFsClient {
+public class LocalFsClient implements ILocalFsClient {
 
     public InputStream readFile(Path path) throws IOException {
         return Files.newInputStream(path);
