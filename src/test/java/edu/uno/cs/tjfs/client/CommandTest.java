@@ -6,6 +6,7 @@ import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
+import static edu.uno.cs.tjfs.client.Command.Name.*;
 
 public class CommandTest {
 
@@ -14,13 +15,13 @@ public class CommandTest {
 
     @Test
     public void shouldDetectCommand() throws CommandFormatException {
-        assertThat(CommandName.GET, equalTo(Command.parse("get /remote /local").name));
-        assertThat(CommandName.PUT, equalTo(Command.parse("put /local /remote").name));
-        assertThat(CommandName.DELETE, equalTo(Command.parse("delete /remote").name));
-        assertThat(CommandName.GET_SIZE, equalTo(Command.parse("getsize /remote").name));
-        assertThat(CommandName.GET_TIME, equalTo(Command.parse("gettime /remote").name));
-        assertThat(CommandName.LIST, equalTo(Command.parse("list /remote/folder").name));
-        assertThat(CommandName.CD, equalTo(Command.parse("cd /remote/folder").name));
+        assertThat(GET, equalTo(Command.parse("get /remote /local").name));
+        assertThat(PUT, equalTo(Command.parse("put /local /remote").name));
+        assertThat(DELETE, equalTo(Command.parse("delete /remote").name));
+        assertThat(GET_SIZE, equalTo(Command.parse("getsize /remote").name));
+        assertThat(GET_TIME, equalTo(Command.parse("gettime /remote").name));
+        assertThat(LIST, equalTo(Command.parse("list /remote/folder").name));
+        assertThat(CD, equalTo(Command.parse("cd /remote/folder").name));
     }
 
     @Test

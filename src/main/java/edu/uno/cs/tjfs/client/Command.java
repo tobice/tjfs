@@ -1,14 +1,55 @@
 package edu.uno.cs.tjfs.client;
 
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
+/**
+ * Static tools for parsing commands. Defines available commands and their options.
+ *
+ * An instance of this object represents a parsed command with its name and arguments.
+ */
 public class Command {
-    public final CommandName name;
-    public final String[] arguments;
 
-    private Command(CommandName name, String[] arguments) {
-        this.name = name;
-        this.arguments = arguments;
+    /** Enum of all available commands */
+    public enum Name {
+        GET("get"),
+        PUT("put"),
+        DELETE("delete"),
+        GET_SIZE("getsize"),
+        GET_TIME("gettime"),
+        LIST("list"),
+        CD("cd");
+
+        private String value;
+
+        private Name(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+    }
+
+    /** Definition of named options for each command */
+    public static Map<Name, Options> cmdOptions;
+
+    static {
+        // Initialize option definitions for Apache Commons CLI
+        cmdOptions = new HashMap<>();
+        /*
+        cmdOptions.put(Name.GET, new Options()
+                .addOption("byteOffset", true, "")
+                .addOption("numberOfBytes", true, ""));
+        */
+        cmdOptions.put(Name.GET, new Options()
+            .addOption(Option.builder().longOpt("byteOffset").hasArg().type(Number.class).build())
+            .addOption(Option.builder().longOpt("numberOfBytes").hasArg().type(Number.class).build()));
     }
 
     /**
@@ -25,7 +66,7 @@ public class Command {
             throw new CommandFormatException("Entered empty command");
         }
 
-        CommandName name = getCommandName(tokens[0]);
+        Name name = getCommandName(tokens[0]);
         if (name == null) {
             throw new CommandFormatException("Unknown command " + tokens[0]);
         }
@@ -33,8 +74,13 @@ public class Command {
         return new Command(name, Arrays.copyOfRange(tokens, 1, tokens.length));
     }
 
-    private static CommandName getCommandName(String token) {
-        for (CommandName name : CommandName.values()) {
+    /**
+     * Return name of the command passed as text
+     * @param token command name as text
+     * @return commmand name or null if not found
+     */
+    private static Name getCommandName(String token) {
+        for (Name name : Name.values()) {
             if (name.getValue().equals(token)) {
                 return name;
             }
@@ -42,4 +88,16 @@ public class Command {
 
         return null;
     }
+
+    /** Name of the parsed command */
+    public final Name name;
+
+    /** Parsed arguments */
+    public final String[] arguments;
+
+    private Command(Name name, String[] arguments) {
+        this.name = name;
+        this.arguments = arguments;
+    }
+
 }
