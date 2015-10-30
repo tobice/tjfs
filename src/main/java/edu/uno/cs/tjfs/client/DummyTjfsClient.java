@@ -74,7 +74,11 @@ public class DummyTjfsClient implements ITjfsClient {
     }
 
     public int getSize(Path path) throws TjfsClientException {
-        return storage.get(path).length;
+        byte[] data = storage.get(path);
+        if (data == null) {
+            throw new TjfsClientException("File not found");
+        }
+        return data.length;
     }
 
     public Date getTime(Path path) throws TjfsClientException {
@@ -83,16 +87,19 @@ public class DummyTjfsClient implements ITjfsClient {
 
     public String[] list(Path path) throws TjfsClientException {
         String prefix = path.toString();
-        List<String> result = new LinkedList<>();
+        if (!prefix.endsWith("/")) {
+            prefix += "/"; // normalize
+        }
+        Set<String> result = new HashSet<>();
 
         for (Path key : storage.keySet()) {
             String s = key.toString();
             if (s.startsWith(prefix)) {
                 s = s.replaceFirst("^" + prefix, "");
-                if (!s.matches("/")) {
+                if (!s.contains("/")) {
                    result.add(s);
                 } else {
-                    result.add(s.replace("/.*$", "/"));
+                    result.add(s.replaceAll("/.*$", "/"));
                 }
             }
         }
