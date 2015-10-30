@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.client;
 
+import edu.uno.cs.tjfs.common.TjfsException;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 
@@ -8,7 +9,6 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Comparator;
 
 import static edu.uno.cs.tjfs.client.Command.Name.*;
 
@@ -17,7 +17,7 @@ public class CommandLineClient {
     private IClient client;
 
     /** Current remote path in Tjfs */
-    private Path pwd;
+    private Path workingDirectory;
 
     /** Output stream used for printing log messages */
     private PrintStream log;
@@ -28,7 +28,15 @@ public class CommandLineClient {
     public CommandLineClient(IClient client, PrintStream log) {
         this.client = client;
         this.log = log;
-        this.pwd = Paths.get("/");
+        this.workingDirectory = Paths.get("/");
+    }
+
+    /**
+     * Get current working directory on a remote server
+     * @return path to a remote folder
+     */
+    public Path getWorkingDirectory() {
+        return workingDirectory;
     }
 
     /**
@@ -46,7 +54,7 @@ public class CommandLineClient {
                 case GET_SIZE: getSize(command.arguments); break;
                 case GET_TIME: getTime(command.arguments); break;
                 case LIST: list(command.arguments); break;
-                case CD: break;
+                case CD: cd(command.arguments); break;
             }
         } catch (CommandFormatException | ParseException e) {
             log.println("Invalid command. " + e.getMessage());
@@ -57,11 +65,15 @@ public class CommandLineClient {
         } catch (IOException e) {
             log.println("Local IO failure. " + e.getMessage());
             e.printStackTrace(log);
+        } catch (TjfsException e) {
+            log.println(e.getMessage());
+            e.printStackTrace(log);
         }
     }
 
     /**
-     * Resolves relative paths against current pwd. Absolute paths remain unchanged
+     * Resolves relative paths against current working directory. Absolute paths remain unchanged.
+     * The resulting path gets normalized (.., . are evaluated)
      * @param path either relative or absolute remote path as string
      * @return absolute remote path
      */
@@ -69,7 +81,7 @@ public class CommandLineClient {
         if (path.startsWith("/")) {
             return Paths.get(path);
         } else {
-            return pwd.resolve(path);
+            return workingDirectory.resolve(path).normalize();
         }
     }
 
@@ -171,5 +183,21 @@ public class CommandLineClient {
             // Remove prefixes (i. e. display only node names)
             log.println(item.replaceFirst("^" + path.toString(), "").replaceFirst("^/", ""));
         }
+    }
+
+    private void cd(String[] arguments) throws TjfsException {
+        if (arguments.length < 1) {
+            throw new CommandFormatException("Please specify remote folder");
+        }
+
+        Path path = getAbsolutePath(arguments[0]);
+        String[] content = client.list(path);
+
+        // Allow change only to non empty directories
+        if (content.length == 0) {
+            throw new TjfsException("Directory does not exist (= is empty)");
+        }
+
+        workingDirectory = path;
     }
 }

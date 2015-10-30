@@ -67,7 +67,8 @@ public interface ITjfsClient {
     Date getTime(Path path) throws TjfsClientException;
 
     /**
-     * Return a list of files and directories in given directory.
+     * Return a list of files and directories in given directory. Should return empty list when
+     * the directory does not exist (= is empty).
      * @param path directory path
      * @return list of absolute paths. Folders end with a slash (/)
      */

@@ -114,4 +114,54 @@ public class CommandLineClientTest {
         verify(client).list(Paths.get("/remote/folder"));
         assertThat(log.toString(), startsWith("folder/\na\nb"));
     }
+
+    @Test
+    public void shouldChangeWorkingDirectory() throws TjfsClientException {
+        // Define simple folder structure
+        when(client.list(Paths.get("/"))).thenReturn(
+            new String[] {"/remote/"});
+        when(client.list(Paths.get("/remote"))).thenReturn(
+            new String[] {"/remote/folder/"});
+        when(client.list(Paths.get("/remote/folder"))).thenReturn(
+            new String[] {"/remote/folder/b", "/remote/folder/a", "/remote/folder/folder/"});
+        when(client.list(Paths.get("/remote/folder/b"))).thenReturn(
+            new String[] {});
+
+        commandLineClient.command("cd remote");
+        assertThat(commandLineClient.getWorkingDirectory().toString(), equalTo("/remote"));
+        verify(client).list(Paths.get("/remote"));
+
+        commandLineClient.command("cd folder");
+        assertThat(commandLineClient.getWorkingDirectory().toString(), equalTo("/remote/folder"));
+
+        commandLineClient.command("cd /");
+        assertThat(commandLineClient.getWorkingDirectory().toString(), equalTo("/"));
+
+        commandLineClient.command("cd /remote/folder/b");
+        assertThat(commandLineClient.getWorkingDirectory().toString(), equalTo("/"));
+        assertThat(log.toString(), startsWith("Directory does not exist"));
+
+        commandLineClient.command("cd /remote/folder");
+        commandLineClient.command("cd ../");
+        assertThat(commandLineClient.getWorkingDirectory().toString(), equalTo("/remote"));
+
+        commandLineClient.command("cd .");
+        commandLineClient.command("cd ./");
+        assertThat(commandLineClient.getWorkingDirectory().toString(), equalTo("/remote"));
+
+        commandLineClient.command("cd ..");
+        assertThat(commandLineClient.getWorkingDirectory().toString(), equalTo("/"));
+
+        commandLineClient.command("cd ..");
+        assertThat(commandLineClient.getWorkingDirectory().toString(), equalTo("/"));
+    }
+
+    @Test
+    public void shouldCdAndGet() throws IOException, TjfsClientException {
+        when(client.list(Paths.get("/remote"))).thenReturn( new String[] {"/remote/source"});
+
+        commandLineClient.command("cd remote");
+        commandLineClient.command("get source /local/target");
+        verify(client).get(Paths.get("/remote/source"), Paths.get("/local/target"));
+    }
 }
