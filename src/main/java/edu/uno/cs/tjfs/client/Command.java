@@ -42,14 +42,13 @@ public class Command {
     static {
         // Initialize option definitions for Apache Commons CLI
         cmdOptions = new HashMap<>();
-        /*
-        cmdOptions.put(Name.GET, new Options()
-                .addOption("byteOffset", true, "")
-                .addOption("numberOfBytes", true, ""));
-        */
+
         cmdOptions.put(Name.GET, new Options()
             .addOption(Option.builder().longOpt("byteOffset").hasArg().type(Number.class).build())
             .addOption(Option.builder().longOpt("numberOfBytes").hasArg().type(Number.class).build()));
+
+        cmdOptions.put(Name.PUT, new Options()
+            .addOption(Option.builder().longOpt("byteOffset").hasArg().type(Number.class).build()));
     }
 
     /**

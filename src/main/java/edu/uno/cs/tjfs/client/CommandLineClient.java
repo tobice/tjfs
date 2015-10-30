@@ -1,11 +1,15 @@
 package edu.uno.cs.tjfs.client;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Comparator;
+
 import static edu.uno.cs.tjfs.client.Command.Name.*;
 
 public class CommandLineClient {
@@ -27,40 +31,23 @@ public class CommandLineClient {
         this.pwd = Paths.get("/");
     }
 
+    /**
+     * Parse and execute command.
+     * @param line command to execute
+     */
     public void command(String line) {
         try {
             Command command = Command.parse(line);
 
             switch (command.name) {
-                case GET:
-                    get(command);
-                    break;
-
-                case PUT:
-                    log.println("To be implemented");
-                    break;
-
-                case DELETE:
-                    log.println("To be implemented");
-                    break;
-
-                case GET_SIZE:
-                    log.println("To be implemented");
-                    break;
-
-                case GET_TIME:
-                    log.println("To be implemented");
-                    break;
-
-                case LIST:
-                    log.println("To be implemented");
-                    break;
-
-                case CD:
-                    log.println("To be implemented");
-                    break;
+                case GET: get(command.arguments); break;
+                case PUT: put(command.arguments); break;
+                case DELETE: delete(command.arguments); break;
+                case GET_SIZE: getSize(command.arguments); break;
+                case GET_TIME: getTime(command.arguments); break;
+                case LIST: list(command.arguments); break;
+                case CD: break;
             }
-
         } catch (CommandFormatException | ParseException e) {
             log.println("Invalid command. " + e.getMessage());
             e.printStackTrace(log);
@@ -73,19 +60,31 @@ public class CommandLineClient {
         }
     }
 
-    private void get(Command command) throws CommandFormatException, IOException, TjfsClientException, ParseException {
-        if (command.arguments.length < 1) {
+    /**
+     * Resolves relative paths against current pwd. Absolute paths remain unchanged
+     * @param path either relative or absolute remote path as string
+     * @return absolute remote path
+     */
+    private Path getAbsolutePath(String path) {
+        if (path.startsWith("/")) {
+            return Paths.get(path);
+        } else {
+            return pwd.resolve(path);
+        }
+    }
+
+    private void get(String[] arguments) throws CommandFormatException, IOException, TjfsClientException, ParseException {
+        if (arguments.length < 1) {
             throw new CommandFormatException("Please specify remote file");
         }
-        if (command.arguments.length < 2) {
+        if (arguments.length < 2) {
             throw new CommandFormatException("Please specify local target");
         }
 
-        // TODO: distinguish when the remote path starts with /
-        Path source = pwd.resolve(command.arguments[0]);
-        Path target = Paths.get(command.arguments[1]);
+        Path source = getAbsolutePath(arguments[0]);
+        Path target = Paths.get(arguments[1]);
 
-        CommandLine options = parser.parse(Command.cmdOptions.get(GET), command.arguments);
+        CommandLine options = parser.parse(Command.cmdOptions.get(GET), arguments);
 
         if (options.hasOption("byteOffset")) {
             int byteOffset = ((Number) options.getParsedOptionValue("byteOffset")).intValue();
@@ -97,6 +96,80 @@ public class CommandLineClient {
             client.get(source, target, byteOffset);
         } else {
             client.get(source, target);
+        }
+    }
+
+    private void put(String[] arguments) throws CommandFormatException, ParseException, IOException, TjfsClientException {
+        if (arguments.length < 1) {
+            throw new CommandFormatException("Please specify local file");
+        }
+        if (arguments.length < 2) {
+            throw new CommandFormatException("Please specify remote target");
+        }
+
+        Path source = Paths.get(arguments[0]);
+        Path target = getAbsolutePath(arguments[1]);
+
+        CommandLine options = parser.parse(Command.cmdOptions.get(PUT), arguments);
+
+        if (options.hasOption("byteOffset")) {
+            int byteOffset = ((Number) options.getParsedOptionValue("byteOffset")).intValue();
+            client.put(source, target, byteOffset);
+        } else {
+            client.put(source, target);
+        }
+    }
+
+    private void delete(String[] arguments) throws TjfsClientException, CommandFormatException {
+        if (arguments.length < 1) {
+            throw new CommandFormatException("Please specify remote file to delete");
+        }
+
+        Path path = getAbsolutePath(arguments[0]);
+        client.delete(path);
+    }
+
+    private void getSize(String[] arguments) throws CommandFormatException, TjfsClientException {
+        if (arguments.length < 1) {
+            throw new CommandFormatException("Please specify remote file");
+        }
+
+        Path path = getAbsolutePath(arguments[0]);
+        int bytes = client.getSize(path);
+        log.println(bytes + " bytes (" + FileUtils.byteCountToDisplaySize(bytes) + ")");
+    }
+
+    private void getTime(String[] arguments) throws CommandFormatException, TjfsClientException {
+        if (arguments.length < 1) {
+            throw new CommandFormatException("Please specify remote file");
+        }
+
+        Path path = getAbsolutePath(arguments[0]);
+        log.println(client.getTime(path));
+    }
+
+    private void list(String[] arguments) throws CommandFormatException, TjfsClientException {
+        if (arguments.length < 1) {
+            throw new CommandFormatException("Please specify remote folder");
+        }
+
+        Path path = getAbsolutePath(arguments[0]);
+        String[] content = client.list(path);
+
+        // Sort items alphabetically and put folders first
+        Arrays.sort(content, (String a, String b) -> {
+            if (a.endsWith("/") && !b.endsWith("/")) {
+                return -1;
+            } else if (!a.endsWith("/") && b.endsWith("/")) {
+                return 1;
+            } else {
+                return a.compareTo(b);
+            }
+        });
+
+        for (String item : content) {
+            // Remove prefixes (i. e. display only node names)
+            log.println(item.replaceFirst("^" + path.toString(), "").replaceFirst("^/", ""));
         }
     }
 }

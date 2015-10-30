@@ -69,7 +69,7 @@ public interface ITjfsClient {
     /**
      * Return a list of files and directories in given directory.
      * @param path directory path
-     * @return list of paths
+     * @return list of absolute paths. Folders end with a slash (/)
      */
     String[] list(Path path) throws TjfsClientException;
 
