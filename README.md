@@ -2,6 +2,20 @@
 
 Distributed file system by Janak Dahal and Tobias Potocek
 
+## How to run the client
+
+```bash
+mvn package
+cd target
+java -cp tjfs.jar edu.uno.cs.tjfs.client.Launcher
+```
+
+Or you can pipe in a file with list of commands to be executed.
+
+```bash
+java -cp tjfs.jar edu.uno.cs.tjfs.client.Launcher -piped < commands
+```
+
 ## Consistency model
 
 Concurrent reads are allowed. Writing to a file will lock to file and nobody will be allowed to 

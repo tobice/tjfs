@@ -23,7 +23,7 @@ public class CommandLineClient {
     private PrintStream log;
 
     /** Apache Commons CLI parses for parsing command arguments */
-    private CommandLineParser parser = new BasicParser();
+    private CommandLineParser parser = new DefaultParser();
 
     public CommandLineClient(IClient client, PrintStream log) {
         this.client = client;
