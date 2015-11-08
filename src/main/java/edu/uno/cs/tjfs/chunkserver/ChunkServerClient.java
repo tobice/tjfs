@@ -1,6 +1,7 @@
 package edu.uno.cs.tjfs.chunkserver;
 
 import com.google.gson.Gson;
+import edu.uno.cs.tjfs.common.Machine;
 import edu.uno.cs.tjfs.common.TjfsException;
 import edu.uno.cs.tjfs.common.messages.ChunkClientMessage;
 import edu.uno.cs.tjfs.common.messages.ClientChunkMessage;
@@ -13,7 +14,7 @@ import java.io.InputStream;
 /**
  * Created by srjanak on 11/5/15.
  */
-public class ChunkServerClient implements IChunkServerClient {
+public class ChunkServerClient implements IChunkClient {
     private IMessageServer messageLayer;
 
     public ChunkServerClient(IMessageServer messageLayer){
@@ -67,5 +68,25 @@ public class ChunkServerClient implements IChunkServerClient {
     public String[] list(){
         // TODO: this would be implemented
         return null;
+    }
+
+    @Override
+    public InputStream getChunk(Machine machine, String name) throws TjfsException {
+        return null;
+    }
+
+    @Override
+    public void putChunk(Machine machine, String name, int length, InputStream data) throws TjfsException {
+
+    }
+
+    @Override
+    public void deleteChunk(Machine machine, String name) throws TjfsException {
+
+    }
+
+    @Override
+    public String[] list(Machine machine) throws TjfsException {
+        return new String[0];
     }
 }
