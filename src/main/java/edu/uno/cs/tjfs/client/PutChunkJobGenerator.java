@@ -1,7 +1,6 @@
 package edu.uno.cs.tjfs.client;
 
 import edu.uno.cs.tjfs.Config;
-import edu.uno.cs.tjfs.chunkserver.IChunkClient;
 import edu.uno.cs.tjfs.common.*;
 
 import java.io.InputStream;

@@ -1,6 +1,5 @@
 package edu.uno.cs.tjfs.client;
 
-import edu.uno.cs.tjfs.chunkserver.IChunkClient;
 import edu.uno.cs.tjfs.common.*;
 import org.junit.Before;
 import org.junit.Test;

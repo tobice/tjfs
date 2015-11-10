@@ -1,10 +1,6 @@
 package edu.uno.cs.tjfs.client;
 
-import edu.uno.cs.tjfs.chunkserver.IChunkClient;
-import edu.uno.cs.tjfs.common.ChunkDescriptor;
-import edu.uno.cs.tjfs.common.FileDescriptor;
-import edu.uno.cs.tjfs.common.TjfsException;
-import edu.uno.cs.tjfs.common.Utils;
+import edu.uno.cs.tjfs.common.*;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
@@ -51,7 +47,7 @@ public class PutChunkJob implements Runnable {
             // overwrite it / update it with new data.
             byte[] content;
             if (oldChunk != null) {
-                byte[] oldData = IOUtils.toByteArray(chunkClient.getChunk(oldChunk));
+                byte[] oldData = IOUtils.toByteArray(chunkClient.get(oldChunk));
                 content = Utils.mergeChunks(oldData, data, byteOffset);
             } else {
                 content = data;
@@ -59,7 +55,7 @@ public class PutChunkJob implements Runnable {
 
             // Push the chunk (and try to replicate it)
             InputStream stream = new ByteArrayInputStream(content);
-            chunkClient.putChunk(chunk, content.length, stream);
+            chunkClient.put(chunk, content.length, stream);
 
             // Update the file descriptor. We need to create new descriptor containing the
             // updated length and the number.

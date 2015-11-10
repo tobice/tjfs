@@ -19,6 +19,11 @@ public class ChunkClient implements IChunkClient {
         }
     }
 
+    @Override
+    public InputStream get(ChunkDescriptor chunkDescriptor) throws TjfsException {
+        return null;
+    }
+
     public void put(Machine machine, String chunkName, int dataLength, InputStream data) throws TjfsException{
         Request request = new Request(MCommand.PUT_CHUNK, new PutChunkRequestArgs(chunkName), data, dataLength);
         MessageClient client = new MessageClient();
@@ -26,6 +31,11 @@ public class ChunkClient implements IChunkClient {
         if (response.code == MCode.ERROR){
             throw new TjfsException(((PutChunkResponseArgs)response.args).status);
         }
+    }
+
+    @Override
+    public void put(ChunkDescriptor chunkDescriptor, int length, InputStream data) throws TjfsException {
+
     }
 
     public void delete(Machine machine, String chunkName)  throws TjfsException{
