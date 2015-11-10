@@ -1,6 +1,7 @@
 package edu.uno.cs.tjfs.common;
 
 import org.junit.Test;
+import org.mockito.internal.exceptions.ExceptionIncludingMockitoWarnings;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -46,5 +47,15 @@ public class UtilsTest {
         assertThat(Utils.getChunkIndex(4, 3), equalTo(1));
         assertThat(Utils.getChunkIndex(5, 3), equalTo(1));
         assertThat(Utils.getChunkIndex(6, 3), equalTo(2));
+    }
+
+    @Test
+    public void testMergeChunks() throws Exception {
+        byte[] a = "abcdef".getBytes();
+        assertThat(Utils.mergeChunks(a, "xyz".getBytes(), 0), equalTo("xyzdef".getBytes()));
+        assertThat(Utils.mergeChunks(a, "xyz".getBytes(), 1), equalTo("axyzef".getBytes()));
+        assertThat(Utils.mergeChunks(a, "xyz".getBytes(), 3), equalTo("abcxyz".getBytes()));
+        assertThat(Utils.mergeChunks(a, "xyz".getBytes(), 5), equalTo("abcdexyz".getBytes()));
+        assertThat(Utils.mergeChunks(a, "xyz".getBytes(), 6), equalTo("abcdefxyz".getBytes()));
     }
 }

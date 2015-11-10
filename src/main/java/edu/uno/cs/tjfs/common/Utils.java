@@ -1,5 +1,7 @@
 package edu.uno.cs.tjfs.common;
 
+import java.util.Arrays;
+
 public class Utils {
     /**
      * Return byte offset within the file corresponding to the given chunk number.
@@ -22,14 +24,16 @@ public class Utils {
     }
 
     /**
-     * Copies new data onto the old data at given byte offset.
+     * Copies new data onto the old data at given byte offset. If necessary, extends the array.
      * @param oldData old chunk data
      * @param newData new chunk data
      * @param byteOffset the offset at which the new data should be written
      * @return combined results
      */
     public static byte[] mergeChunks(byte[] oldData, byte[] newData, int byteOffset) {
-        // TODO: implement this and test this
-        return new byte[0];
+        int length = Math.max(oldData.length, byteOffset + newData.length);
+        byte[] result = Arrays.copyOf(oldData, length);
+        System.arraycopy(newData, 0, result, byteOffset, newData.length);
+        return result;
     }
 }
