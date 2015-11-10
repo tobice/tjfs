@@ -1,11 +1,12 @@
 package edu.uno.cs.tjfs.common.messages;
 
-import java.io.OutputStream;
+import edu.uno.cs.tjfs.common.messages.arguments.IMessageArgs;
 
-abstract public class Message<T> {
-    int jsonLength;
-    int dataLength;
+import java.io.InputStream;
 
-    T json;
-    OutputStream data;
+abstract public class Message {
+    public IMessageArgs args;
+    public InputStream data;
+
+    public int dataLength;
 }
