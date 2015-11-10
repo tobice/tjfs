@@ -1,15 +1,20 @@
 package edu.uno.cs.tjfs.common;
 
-import edu.uno.cs.tjfs.client.AllocatedChunkName;
-
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.nio.file.Path;
+import java.util.*;
 
 public class DummyMasterClient implements IMasterClient {
 
     private int chunkCounter = 0;
+
+    /** List of available chunk servers */
     private List<Machine> chunkServers = new LinkedList<>();
+
+    /** Map of existing chunks */
+    private Map<String, ChunkDescriptor> chunks = new HashMap<>();
+
+    /** Map of existing files */
+    private Map<Path, FileDescriptor> files = new HashMap<>();
 
     public DummyMasterClient() {
         chunkServers.add(new Machine("127.0.0.1", 8000));
@@ -19,12 +24,21 @@ public class DummyMasterClient implements IMasterClient {
     }
 
     @Override
-    public List<AllocatedChunkName> allocateChunks(int number) throws TjfsException {
-        List<AllocatedChunkName> allocated = new LinkedList<>();
+    public List<ChunkDescriptor> allocateChunks(int number) throws TjfsException {
+        List<ChunkDescriptor> allocated = new LinkedList<>();
+        ChunkDescriptor chunkDescriptor;
         for (int i = 0; i < number; i++) {
-            allocated.add(new AllocatedChunkName("" + (chunkCounter++), getRandomChunkServers(2)));
+            chunkDescriptor = new ChunkDescriptor("" + (chunkCounter++), getRandomChunkServers(2));
+            allocated.add(chunkDescriptor);
+            chunks.put(chunkDescriptor.name, chunkDescriptor);
         }
         return allocated;
+    }
+
+    @Override
+    public FileDescriptor getFile(Path path) throws TjfsException {
+        FileDescriptor descriptor = files.get(path);
+        return descriptor == null ? new FileDescriptor(path) : descriptor;
     }
 
     private List<Machine> getRandomChunkServers(int number) {

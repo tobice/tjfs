@@ -1,13 +1,10 @@
 package edu.uno.cs.tjfs.client;
 
+import edu.uno.cs.tjfs.common.TjfsException;
 import org.apache.commons.lang.ArrayUtils;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -18,7 +15,7 @@ public class ChunkChopperTest {
     private final String data3 = "abcdefgh";
 
     @Test
-    public void testChopNext() throws IOException {
+    public void testChopNext() throws TjfsException{
         ChunkChopper chopper = new ChunkChopper(3, new ByteArrayInputStream(data1.getBytes()));
         assertThat(chopper.chopNext(), equalTo("abc".getBytes()));
         assertThat(chopper.chopNext(), equalTo("def".getBytes()));
@@ -47,7 +44,17 @@ public class ChunkChopperTest {
     }
 
     @Test
-    public void testChopNextIteration() throws IOException {
+    public void testChopNextWithLength() throws TjfsException {
+        ChunkChopper chopper = new ChunkChopper(3, new ByteArrayInputStream(data1.getBytes()));
+        assertThat(chopper.chopNext(0), equalTo("".getBytes()));
+        assertThat(chopper.chopNext(1), equalTo("a".getBytes()));
+        assertThat(chopper.chopNext(2), equalTo("bc".getBytes()));
+        assertThat(chopper.chopNext(), equalTo("def".getBytes()));
+        assertThat(chopper.chopNext(), nullValue());
+    }
+
+    @Test
+    public void testChopNextIteration() throws TjfsException {
         // This doesn't really test anything extra. It's merely a verification that the chunk
         // reading in cycle works as intended.
         ChunkChopper chopper = new ChunkChopper(1, new ByteArrayInputStream(data1.getBytes()));

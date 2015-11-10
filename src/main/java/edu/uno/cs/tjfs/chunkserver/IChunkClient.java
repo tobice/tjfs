@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.chunkserver;
 
+import edu.uno.cs.tjfs.common.ChunkDescriptor;
 import edu.uno.cs.tjfs.common.Machine;
 import edu.uno.cs.tjfs.common.TjfsException;
 
@@ -18,7 +19,9 @@ public interface IChunkClient {
     // TODO: move this file eventually to common package as it's going to be used on multiple places
     // (the same applies to the actual implementation)
     InputStream getChunk(Machine machine, String name) throws TjfsException;
+    InputStream getChunk(ChunkDescriptor chunkDescriptor) throws TjfsException;
     void putChunk(Machine machine, String name, int length, InputStream data) throws TjfsException;
+    void putChunk(ChunkDescriptor chunkDescriptor, int length, InputStream data) throws TjfsException;
     void deleteChunk(Machine machine, String name) throws TjfsException;
     String[] list(Machine machine) throws TjfsException;
 }

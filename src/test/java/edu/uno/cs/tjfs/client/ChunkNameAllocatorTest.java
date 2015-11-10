@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.client;
 
+import edu.uno.cs.tjfs.common.ChunkDescriptor;
 import edu.uno.cs.tjfs.common.DummyMasterClient;
 import edu.uno.cs.tjfs.common.IMasterClient;
 import edu.uno.cs.tjfs.common.TjfsException;
@@ -21,10 +22,10 @@ public class ChunkNameAllocatorTest {
     @Test
     public void testGetOne() throws TjfsException {
         for (int i = 0; i < 10; i++) {
-            AllocatedChunkName name = allocator.getOne();
+            ChunkDescriptor name = allocator.getOne();
             assertThat(name.name, equalTo("" + i)); // DummyMasterClient uses numbers as chunk names
-            assertThat(name.targetChunkServers.size(), equalTo(2));
-            assertThat(name.targetChunkServers.get(0), not(equalTo(name.targetChunkServers.get(1))));
+            assertThat(name.chunkServers.size(), equalTo(2));
+            assertThat(name.chunkServers.get(0), not(equalTo(name.chunkServers.get(1))));
         }
 
         // Just check that the correct number of names is still left in the buffer

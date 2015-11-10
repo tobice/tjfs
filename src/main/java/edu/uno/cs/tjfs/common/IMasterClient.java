@@ -1,7 +1,6 @@
 package edu.uno.cs.tjfs.common;
 
-import edu.uno.cs.tjfs.client.AllocatedChunkName;
-
+import java.nio.file.Path;
 import java.util.List;
 
 public interface IMasterClient {
@@ -13,5 +12,14 @@ public interface IMasterClient {
      * @param number of chunks to allocate
      * @return set of chunk names and their indented target chunk servers.
      */
-    List<AllocatedChunkName> allocateChunks(int number) throws TjfsException;
+    List<ChunkDescriptor> allocateChunks(int number) throws TjfsException;
+
+    /**
+     * Return file descriptor for given file. If the file does not exist, an empty file
+     * descriptor is returned (zero size, no chunks).
+     * @param path location of the file
+     * @return file descriptor
+     * @throws TjfsException
+     */
+    FileDescriptor getFile(Path path) throws TjfsException;
 }

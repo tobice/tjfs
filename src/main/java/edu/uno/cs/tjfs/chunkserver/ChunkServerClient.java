@@ -1,6 +1,7 @@
 package edu.uno.cs.tjfs.chunkserver;
 
 import com.google.gson.Gson;
+import edu.uno.cs.tjfs.common.ChunkDescriptor;
 import edu.uno.cs.tjfs.common.Machine;
 import edu.uno.cs.tjfs.common.TjfsException;
 import edu.uno.cs.tjfs.common.messages.ChunkClientMessage;
@@ -76,7 +77,17 @@ public class ChunkServerClient implements IChunkClient {
     }
 
     @Override
+    public InputStream getChunk(ChunkDescriptor chunkDescriptor) throws TjfsException {
+        return null;
+    }
+
+    @Override
     public void putChunk(Machine machine, String name, int length, InputStream data) throws TjfsException {
+
+    }
+
+    @Override
+    public void putChunk(ChunkDescriptor chunkDescriptor, int length, InputStream data) throws TjfsException {
 
     }
 
