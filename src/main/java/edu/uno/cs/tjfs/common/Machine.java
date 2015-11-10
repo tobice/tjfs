@@ -9,4 +9,16 @@ public class Machine {
         this.port = port;
     }
 
+    public boolean equals(Object object) {
+        if (!(object instanceof Machine)) {
+            return false;
+        }
+        Machine otherMachine = (Machine) object;
+        return this.ip.equals(otherMachine.ip) && this.port == otherMachine.port;
+    }
+
+    public int hashCode() {
+        // This *should* generate a unique code for this machine
+        return 37 * ip.hashCode() + port;
+    }
 }

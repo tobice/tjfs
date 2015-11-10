@@ -6,4 +6,8 @@ public class TjfsClientException extends TjfsException {
     public TjfsClientException(String s) {
         super(s);
     }
+
+    public TjfsClientException(String s, Throwable reason) {
+        super(s, reason);
+    }
 }
