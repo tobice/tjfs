@@ -21,7 +21,22 @@ public class ChunkClient implements IChunkClient {
 
     @Override
     public InputStream get(ChunkDescriptor chunkDescriptor) throws TjfsException {
-        return null;
+        Response response = null;
+        for(Machine machine : chunkDescriptor.chunkServers){
+            Request request = new Request(MCommand.GET_CHUNK, new GetChunkRequestArgs(chunkDescriptor.name), null, 0);
+            MessageClient client = new MessageClient();
+            response = client.send(machine, request);
+            if (response.code == MCode.SUCCESS) {
+                break;
+            }
+        }
+        if (response == null) {
+            throw new TjfsException("No response received.");
+        }
+        else if (response.code == MCode.ERROR){
+            throw new TjfsException(((GetChunkResponseArgs)response.args).status);
+        }
+        return response.data;
     }
 
     public void put(Machine machine, String chunkName, int dataLength, InputStream data) throws TjfsException{
@@ -33,9 +48,23 @@ public class ChunkClient implements IChunkClient {
         }
     }
 
+    private void replicateAsync(Machine machineFrom, Machine machineTo, String chunkName) throws TjfsException{
+        Request request = new Request(MCommand.PUT_CHUNK, new ReplicateChunkRequestArgs(chunkName, machineTo), null, 0);
+        MessageClient client = new MessageClient();
+        client.sendAsync(machineFrom, request);
+    }
+
     @Override
     public void put(ChunkDescriptor chunkDescriptor, int length, InputStream data) throws TjfsException {
+        if (chunkDescriptor.size != 2)
+            throw new TjfsException("Invalid number of chunks.");
 
+        try{
+            put(chunkDescriptor.chunkServers.get(0), chunkDescriptor.name, length, data);
+            replicateAsync(chunkDescriptor.chunkServers.get(0), chunkDescriptor.chunkServers.get(1), chunkDescriptor.name);
+        }catch(Exception e){
+            put(chunkDescriptor.chunkServers.get(1), chunkDescriptor.name, length, data);
+        }
     }
 
     public void delete(Machine machine, String chunkName)  throws TjfsException{
