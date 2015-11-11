@@ -3,6 +3,7 @@ package edu.uno.cs.tjfs.client;
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 
+import javax.rmi.CORBA.Util;
 import java.io.InputStream;
 
 public class PutChunkJobGenerator {
@@ -61,10 +62,10 @@ public class PutChunkJobGenerator {
             // byteOffset, pad the empty space with zeros.
             if (file.getChunk(currentIndex) == null) {
                 return createJobForEmptyChunk();
-            } else if (file.chunks.get(currentIndex).size < chunkSize) {
+            } else if (file.getChunk(currentIndex).size < chunkSize) {
                 return createJobForPaddingChunk();
             } else {
-                // The chunk at this position is complete of the full length and there is no
+                // The chunk at this position is full and there is no
                 // reason to change it, so let's just jump to the next one.
                 return getNext();
             }
@@ -98,7 +99,7 @@ public class PutChunkJobGenerator {
 
     /**
      * Job description: this is the chunk where we actually start writing. Beginning of the chunk
-     * remains old but the rest of it is filled with the new data.
+     * remains old but the rest of it is filled with the new data (we're on the edge).
      * @return new job
      * @throws TjfsException
      */
@@ -107,14 +108,19 @@ public class PutChunkJobGenerator {
         int inChunkOffset = byteOffset - Utils.getChunkOffset(currentIndex, chunkSize);
         byte[] data = chopper.chopNext(chunkSize - inChunkOffset);
 
-        // TODO: what if there is not chunk to be updated? We need to pad it with zeros
-
         // We reached the end of the stream. No data to be written, no more jobs.
         if (data == null)  {
             return null;
         }
 
-        return createJob(oldChunk, allocator.getOne(), data, inChunkOffset);
+        // If there is no chunk to be overwritten, we have to pad the beginning of the chunk with
+        // zeros (the length is defined by inChunkOffset
+        if (oldChunk == null) {
+            data = Utils.mergeChunks(new byte[inChunkOffset], data, inChunkOffset);
+            return createJob(null, allocator.getOne(), data, 0);
+        } else {
+            return createJob(oldChunk, allocator.getOne(), data, inChunkOffset);
+        }
     }
 
     /**
@@ -134,7 +140,8 @@ public class PutChunkJobGenerator {
             // merge it with the old chunk (which might or might not exist)
             return createJob(file.getChunk(currentIndex), allocator.getOne(), data, 0);
         } else {
-            // Insert brand new complete data chunk
+            // Insert brand new complete data chunk which will fill up the complete chunk length.
+            // For that reason we don't need to fetch the old one (we save up one remote call)
             return createJob(null, allocator.getOne(), data, 0);
         }
     }

@@ -15,7 +15,11 @@ public class PutChunkJob implements Runnable {
     /** File that the chunk belongs to */
     protected final FileDescriptor file;
 
-    /** Descriptor of the old chunk that we have to overwrite */
+    /**
+     * Descriptor of the old chunk that we have to overwrite. If not null, the old chunk is
+     * actually fetched and its content is merged with the new data. If null, no chunk is fetched
+     * and the new data are simply written to a new chunk
+     **/
     protected final ChunkDescriptor oldChunk;
 
     /** New chunk descriptor */

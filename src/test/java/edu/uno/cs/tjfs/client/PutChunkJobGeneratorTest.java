@@ -99,9 +99,9 @@ public class PutChunkJobGeneratorTest {
         int byteOffset = 6;
         FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 8, null,
             new LinkedList<>(Arrays.asList(
-                    new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
-                    new ChunkDescriptor("1", new LinkedList<>(), 3, 1),
-                    new ChunkDescriptor("2", new LinkedList<>(), 2, 2))));
+                new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
+                new ChunkDescriptor("1", new LinkedList<>(), 3, 1),
+                new ChunkDescriptor("2", new LinkedList<>(), 2, 2))));
         InputStream data = new ByteArrayInputStream("abcde".getBytes());
         PutChunkJobGenerator generator = new PutChunkJobGenerator(masterClient, chunkClient, chunkSize, file, data, byteOffset);
         PutChunkJob job;
@@ -123,7 +123,9 @@ public class PutChunkJobGeneratorTest {
     }
 
     @Test
-    public void testPadFile() throws Exception {
+    public void testPadEmptyFile() throws Exception {
+        // Writing a new file, but with an offset. Which means that we have to pad the beginning
+        // of the file with empty zero chunks.
 
         int chunkSize = 3;
         int byteOffset = 4;
@@ -138,6 +140,58 @@ public class PutChunkJobGeneratorTest {
         assertThat(job.index, equalTo(0));
         assertThat(job.oldChunk, equalTo(null));
 
-        // TODO: finish this
+        job = generator.getNext();
+        assertThat(job.data, equalTo(new byte[] {0, 97, 98}));
+        assertThat(job.byteOffset, equalTo(0));
+        assertThat(job.index, equalTo(1));
+        assertThat(job.oldChunk, equalTo(null));
+
+        job = generator.getNext();
+        assertThat(job.data, equalTo("cde".getBytes()));
+        assertThat(job.byteOffset, equalTo(0));
+        assertThat(job.index, equalTo(2));
+        assertThat(job.oldChunk, equalTo(null));
+
+        job = generator.getNext();
+        assertThat(job.data, equalTo("fg".getBytes()));
+        assertThat(job.byteOffset, equalTo(0));
+        assertThat(job.index, equalTo(3));
+        assertThat(job.oldChunk, equalTo(null));
+
+        job = generator.getNext();
+        assertThat(job, equalTo(null));
+    }
+
+    @Test
+    public void testPadShortFile() throws Exception {
+        int chunkSize = 3;
+        int byteOffset = 4;
+        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 8, null,
+            new LinkedList<>(Arrays.asList(
+                new ChunkDescriptor("0", new LinkedList<>(), 2, 2))));
+        InputStream data = new ByteArrayInputStream("abc".getBytes());
+        PutChunkJobGenerator generator = new PutChunkJobGenerator(masterClient, chunkClient, chunkSize, file, data, byteOffset);
+        PutChunkJob job;
+
+        job = generator.getNext();
+        assertThat(job.data, equalTo(new byte[] {0}));
+        assertThat(job.byteOffset, equalTo(2));
+        assertThat(job.index, equalTo(0));
+        assertThat(job.oldChunk, equalTo(file.getChunk(0)));
+
+        job = generator.getNext();
+        assertThat(job.data, equalTo(new byte[] {0, 97, 98}));
+        assertThat(job.byteOffset, equalTo(0));
+        assertThat(job.index, equalTo(1));
+        assertThat(job.oldChunk, equalTo(null));
+
+        job = generator.getNext();
+        assertThat(job.data, equalTo("c".getBytes()));
+        assertThat(job.byteOffset, equalTo(0));
+        assertThat(job.index, equalTo(2));
+        assertThat(job.oldChunk, equalTo(null));
+
+        job = generator.getNext();
+        assertThat(job, equalTo(null));
     }
 }
