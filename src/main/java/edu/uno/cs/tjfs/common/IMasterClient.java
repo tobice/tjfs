@@ -22,4 +22,11 @@ public interface IMasterClient {
      * @throws TjfsException
      */
     FileDescriptor getFile(Path path) throws TjfsException;
+
+    /**
+     * Update file meta data on master server.
+     * @param file descriptor containing all metadata including the updated chunks.
+     * @throws TjfsException
+     */
+    void updateFile(FileDescriptor file) throws TjfsException;
 }

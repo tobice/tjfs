@@ -2,6 +2,7 @@ package edu.uno.cs.tjfs.client;
 
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.threads.JobExecutor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +14,7 @@ public class TjfsClient implements ITjfsClient {
     private IMasterClient masterClient;
     private IChunkClient chunkClient;
 
-    public TjfsClient(Config config) {
+    public TjfsClient(Config config, IMasterClient masterClient, IChunkClient chunkClient) {
         this.config = config;
         this.masterClient = masterClient;
         this.chunkClient = chunkClient;
@@ -47,13 +48,16 @@ public class TjfsClient implements ITjfsClient {
             // Get file descriptor. Might by empty, doesn't matter.
             FileDescriptor file = masterClient.getFile(path);
 
-            // Init tools that we're going to need
-            ChunkNameAllocator allocator = new ChunkNameAllocator(masterClient, 10);
-            // TODO: init job generator
+            // Push chunks to chunk servers in parallel using put jobs. Each job will update the
+            // file descriptor with updated chunk descriptor.
+            PutChunkJobProducer producer = new PutChunkJobProducer(masterClient, chunkClient,
+                config.getChunkSize(), file, data, byteOffset);
+            JobExecutor executor = new JobExecutor(producer, config.getExecutorPoolSize(),
+                config.getExecutorQueueSize());
+            executor.execute(); // ...might throw an exception.
 
-
-            // TODO: use job generator...
-
+            // Update the descriptor.
+            masterClient.updateFile(file);
 
             // TODO: Unlock the file
         } catch (TjfsException e) {

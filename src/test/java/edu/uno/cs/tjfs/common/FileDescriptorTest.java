@@ -14,7 +14,7 @@ public class FileDescriptorTest {
 
     @Test
     public void testReplaceChunk() throws Exception {
-        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 8, null,
+        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), null,
             new ArrayList<>(Arrays.asList(
                 new ChunkDescriptor("0", new LinkedList<>(), 2, 0))));
 
@@ -28,5 +28,20 @@ public class FileDescriptorTest {
         assertThat(file.getChunk(1), equalTo(null));
         assertThat(file.getChunk(2), is(chunk3));
         assertThat(file.chunks.size(), is(3));
+    }
+
+    @Test
+    public void testGetSize() {
+        FileDescriptor file;
+
+        file = new FileDescriptor(Paths.get("random_file"), null,
+            new ArrayList<>(Arrays.asList(
+                new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
+                new ChunkDescriptor("0", new LinkedList<>(), 3, 1),
+                new ChunkDescriptor("0", new LinkedList<>(), 2, 2))));
+        assertThat(file.getSize(), equalTo(8));
+
+        file = new FileDescriptor(Paths.get("random_file"), null, new ArrayList<>());
+        assertThat(file.getSize(), equalTo(0));
     }
 }

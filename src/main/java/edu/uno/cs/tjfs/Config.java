@@ -1,7 +1,19 @@
 package edu.uno.cs.tjfs;
 
 public class Config {
-    public final int CHUNK_SIZE = 16 * 1024 * 1024;
+    protected int chunkSize = 16 * 1024 * 1024;
+    protected int executorPoolSize = 3;
+    protected int executorQueueSize = 3;
 
-    // TODO: come up with something better... not make it final?
+    public int getExecutorQueueSize() {
+        return executorQueueSize;
+    }
+
+    public int getExecutorPoolSize() {
+        return executorPoolSize;
+    }
+
+    public int getChunkSize() {
+        return chunkSize;
+    }
 }

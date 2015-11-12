@@ -8,25 +8,20 @@ public class FileDescriptor {
     /** File path */
     public final Path path;
 
-    /** File size in bytes */
-    public final int size;
-
     /** Time of the last update */
     public final Date time;
 
     /** List of chunks that the file consists of */
     protected final ArrayList<ChunkDescriptor> chunks;
 
-    public FileDescriptor(Path path, int size, Date time, ArrayList<ChunkDescriptor> chunks) {
+    public FileDescriptor(Path path, Date time, ArrayList<ChunkDescriptor> chunks) {
         this.path = path;
-        this.size = size;
         this.time = time;
         this.chunks = chunks;
     }
 
     public FileDescriptor(Path path) {
         this.path = path;
-        this.size = 0;
         this.time = new Date();
         this.chunks = new ArrayList<>();
     }
@@ -58,5 +53,13 @@ public class FileDescriptor {
             chunks.add(null);
         }
         chunks.set(chunk.index, chunk);
+    }
+
+    /**
+     * Return the file size in bytes (based on the chunk descriptors).
+     * @return size in bytes
+     */
+    public int getSize() {
+        return chunks.stream().mapToInt(chunk -> chunk.size).sum();
     }
 }

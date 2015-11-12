@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-public class PutChunkJobGeneratorTest {
+public class PutChunkJobProducerTest {
 
     IMasterClient masterClient;
     IChunkClient chunkClient;
@@ -34,28 +34,28 @@ public class PutChunkJobGeneratorTest {
         int byteOffset = 0;
         FileDescriptor file = new FileDescriptor(Paths.get("random_file"));
         InputStream data = new ByteArrayInputStream("abcdefg".getBytes());
-        PutChunkJobGenerator generator = new PutChunkJobGenerator(masterClient, chunkClient, chunkSize, file, data, byteOffset);
+        PutChunkJobProducer producer = new PutChunkJobProducer(masterClient, chunkClient, chunkSize, file, data, byteOffset);
         PutChunkJob job;
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("abc".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(0));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("def".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(1));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("g".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(2));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job, equalTo(null));
     }
 
@@ -66,28 +66,28 @@ public class PutChunkJobGeneratorTest {
 
         int chunkSize = 3;
         int byteOffset = 5;
-        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 9, null,
+        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), null,
             new ArrayList<>(Arrays.asList(
                 new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
                 new ChunkDescriptor("1", new LinkedList<>(), 3, 1),
                 new ChunkDescriptor("2", new LinkedList<>(), 3, 2))));
         InputStream data = new ByteArrayInputStream("ab".getBytes());
-        PutChunkJobGenerator generator = new PutChunkJobGenerator(masterClient, chunkClient, chunkSize, file, data, byteOffset);
+        PutChunkJobProducer producer = new PutChunkJobProducer(masterClient, chunkClient, chunkSize, file, data, byteOffset);
         PutChunkJob job;
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("a".getBytes()));
         assertThat(job.byteOffset, equalTo(2));
         assertThat(job.index, equalTo(1));
         assertThat(job.oldChunk, is(file.getChunk(1)));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("b".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(2));
         assertThat(job.oldChunk, is(file.getChunk(2)));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job, equalTo(null));
     }
 
@@ -98,28 +98,28 @@ public class PutChunkJobGeneratorTest {
 
         int chunkSize = 3;
         int byteOffset = 6;
-        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 8, null,
+        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), null,
             new ArrayList<>(Arrays.asList(
                 new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
                 new ChunkDescriptor("1", new LinkedList<>(), 3, 1),
                 new ChunkDescriptor("2", new LinkedList<>(), 2, 2))));
         InputStream data = new ByteArrayInputStream("abcde".getBytes());
-        PutChunkJobGenerator generator = new PutChunkJobGenerator(masterClient, chunkClient, chunkSize, file, data, byteOffset);
+        PutChunkJobProducer producer = new PutChunkJobProducer(masterClient, chunkClient, chunkSize, file, data, byteOffset);
         PutChunkJob job;
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("abc".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(2));
         assertThat(job.oldChunk, is(file.getChunk(2)));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("de".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(3));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job, equalTo(null));
     }
 
@@ -132,34 +132,34 @@ public class PutChunkJobGeneratorTest {
         int byteOffset = 4;
         FileDescriptor file = new FileDescriptor(Paths.get("random_file"));
         InputStream data = new ByteArrayInputStream("abcdefg".getBytes());
-        PutChunkJobGenerator generator = new PutChunkJobGenerator(masterClient, chunkClient, chunkSize, file, data, byteOffset);
+        PutChunkJobProducer producer = new PutChunkJobProducer(masterClient, chunkClient, chunkSize, file, data, byteOffset);
         PutChunkJob job;
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo(new byte[] {0, 0, 0}));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(0));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo(new byte[] {0, 97, 98}));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(1));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("cde".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(2));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("fg".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(3));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job, equalTo(null));
     }
 
@@ -167,32 +167,32 @@ public class PutChunkJobGeneratorTest {
     public void testPadShortFile() throws Exception {
         int chunkSize = 3;
         int byteOffset = 4;
-        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 8, null,
+        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), null,
             new ArrayList<>(Arrays.asList(
                 new ChunkDescriptor("0", new LinkedList<>(), 2, 2))));
         InputStream data = new ByteArrayInputStream("abc".getBytes());
-        PutChunkJobGenerator generator = new PutChunkJobGenerator(masterClient, chunkClient, chunkSize, file, data, byteOffset);
+        PutChunkJobProducer producer = new PutChunkJobProducer(masterClient, chunkClient, chunkSize, file, data, byteOffset);
         PutChunkJob job;
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo(new byte[] {0}));
         assertThat(job.byteOffset, equalTo(2));
         assertThat(job.index, equalTo(0));
         assertThat(job.oldChunk, equalTo(file.getChunk(0)));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo(new byte[] {0, 97, 98}));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(1));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job.data, equalTo("c".getBytes()));
         assertThat(job.byteOffset, equalTo(0));
         assertThat(job.index, equalTo(2));
         assertThat(job.oldChunk, equalTo(null));
 
-        job = generator.getNext();
+        job = (PutChunkJob) producer.getNext();
         assertThat(job, equalTo(null));
     }
 }

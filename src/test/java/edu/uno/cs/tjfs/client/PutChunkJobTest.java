@@ -23,7 +23,6 @@ import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -69,7 +68,7 @@ public class PutChunkJobTest {
         // content combined the old chunk and the incoming data
 
         ChunkDescriptor oldChunk = new ChunkDescriptor("0", new LinkedList<>(), 6, 0);
-        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 6, null,
+        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), null,
             new ArrayList<>(Arrays.asList(oldChunk)));
         ChunkDescriptor chunk = new ChunkDescriptor("0", new LinkedList<>());
         byte[] data = "abc".getBytes();
@@ -98,7 +97,7 @@ public class PutChunkJobTest {
         // failure listener
 
         ChunkDescriptor oldChunk = new ChunkDescriptor("0", new LinkedList<>(), 6, 0);
-        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 6, null,
+        FileDescriptor file = new FileDescriptor(Paths.get("random_file"), null,
                 new ArrayList<>(Arrays.asList(oldChunk)));
         ChunkDescriptor chunk = new ChunkDescriptor("0", new LinkedList<>());
         byte[] data = "abcdef".getBytes();

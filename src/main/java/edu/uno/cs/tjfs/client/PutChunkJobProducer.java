@@ -2,11 +2,14 @@ package edu.uno.cs.tjfs.client;
 
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.threads.IJobProducer;
+import edu.uno.cs.tjfs.common.threads.Job;
+import edu.uno.cs.tjfs.common.threads.UnableToProduceJobException;
 
 import javax.rmi.CORBA.Util;
 import java.io.InputStream;
 
-public class PutChunkJobGenerator {
+public class PutChunkJobProducer implements IJobProducer {
 
     /** Master client to access master server */
     private final IMasterClient masterClient;
@@ -37,7 +40,7 @@ public class PutChunkJobGenerator {
      * @param data data to be written
      * @param byteOffset position in the file where to start write the data
      */
-    public PutChunkJobGenerator(IMasterClient masterClient, IChunkClient chunkClient, int chunkSize, FileDescriptor file, InputStream data, int byteOffset) {
+    public PutChunkJobProducer(IMasterClient masterClient, IChunkClient chunkClient, int chunkSize, FileDescriptor file, InputStream data, int byteOffset) {
         this.masterClient = masterClient;
         this.chunkClient = chunkClient;
         this.chunkSize = chunkSize;
@@ -48,31 +51,34 @@ public class PutChunkJobGenerator {
         chopper = new ChunkChopper(chunkSize, data);
     }
 
-    public PutChunkJob getNext() throws TjfsException {
+    public Job getNext() throws UnableToProduceJobException {
+        try {
+            // Increase our cursor so that recursion works. That's why the initial value has to be -1
+            currentIndex++;
 
-        // Increase our cursor so that recursion works. That's why the initial value has to be -1
-        currentIndex++;
+            // Calculate the index of the first chunk that will contain our data
+            int targetIndex = Utils.getChunkIndex(byteOffset, chunkSize);
 
-        // Calculate the index of the first chunk that will contain our data
-        int targetIndex = Utils.getChunkIndex(byteOffset, chunkSize);
-
-        if (currentIndex < targetIndex) {
-            // Using recursion iterate through the beginning of the file until we reach the point
-            // where we have to start writing. If the file is actually shorter than our
-            // byteOffset, pad the empty space with zeros.
-            if (file.getChunk(currentIndex) == null) {
-                return createJobForEmptyChunk();
-            } else if (file.getChunk(currentIndex).size < chunkSize) {
-                return createJobForPaddingChunk();
+            if (currentIndex < targetIndex) {
+                // Using recursion iterate through the beginning of the file until we reach the point
+                // where we have to start writing. If the file is actually shorter than our
+                // byteOffset, pad the empty space with zeros.
+                if (file.getChunk(currentIndex) == null) {
+                    return createJobForEmptyChunk();
+                } else if (file.getChunk(currentIndex).size < chunkSize) {
+                    return createJobForPaddingChunk();
+                } else {
+                    // The chunk at this position is full and there is no
+                    // reason to change it, so let's just jump to the next one.
+                    return getNext();
+                }
+            } else if (currentIndex == targetIndex) {
+                return createJobForInitialChunk();
             } else {
-                // The chunk at this position is full and there is no
-                // reason to change it, so let's just jump to the next one.
-                return getNext();
+                return createJobForNewChunk();
             }
-        } else if (currentIndex == targetIndex) {
-            return createJobForInitialChunk();
-        } else {
-            return createJobForNewChunk();
+        } catch (TjfsException e) {
+            throw new UnableToProduceJobException(e.getMessage(), e);
         }
     }
 
