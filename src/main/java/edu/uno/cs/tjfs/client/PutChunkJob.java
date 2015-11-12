@@ -1,13 +1,16 @@
 package edu.uno.cs.tjfs.client;
 
 import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.threads.Job;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class PutChunkJob implements Runnable {
+public class PutChunkJob extends Job {
+    // final static Logger logger = Logger.getLogger(PutChunkJob.class);
 
     /** Chunk client to access chunk servers */
     protected final IChunkClient chunkClient;
@@ -47,6 +50,8 @@ public class PutChunkJob implements Runnable {
     @Override
     public void run() {
         try {
+            // logger.info("Starting a new job to push the chunk " + chunk.name);
+
             // If there is an original chunk that should be updated, we have to get it and then
             // overwrite it / update it with new data.
             byte[] content;
@@ -62,11 +67,12 @@ public class PutChunkJob implements Runnable {
             chunkClient.put(chunk, content.length, stream);
 
             // Update the file descriptor. We need to create new descriptor containing the
-            // updated length and the number.
-            file.chunks.add(index, chunk.withSizeAndNumber(content.length, index));
+            // updated length and the index. FileDescriptor#replaceChunk is synchronized so we
+            // can afford to call it from separate thread (plus each thread corresponds to a
+            // different chunk index which means that in theory, no conflicts should happen).
+            file.replaceChunk(chunk.withSizeAndNumber(content.length, index));
         } catch (TjfsException|IOException e) {
-            e.printStackTrace();
-            // TODO: ??
+            notifyFailure(new TjfsException("Put chunk job failed. Reason: " + e.getMessage(), e));
         }
     }
 }

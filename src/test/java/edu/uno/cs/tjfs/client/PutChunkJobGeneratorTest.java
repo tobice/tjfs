@@ -10,6 +10,7 @@ import static org.hamcrest.CoreMatchers.*;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 
@@ -66,7 +67,7 @@ public class PutChunkJobGeneratorTest {
         int chunkSize = 3;
         int byteOffset = 5;
         FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 9, null,
-            new LinkedList<>(Arrays.asList(
+            new ArrayList<>(Arrays.asList(
                 new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
                 new ChunkDescriptor("1", new LinkedList<>(), 3, 1),
                 new ChunkDescriptor("2", new LinkedList<>(), 3, 2))));
@@ -98,7 +99,7 @@ public class PutChunkJobGeneratorTest {
         int chunkSize = 3;
         int byteOffset = 6;
         FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 8, null,
-            new LinkedList<>(Arrays.asList(
+            new ArrayList<>(Arrays.asList(
                 new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
                 new ChunkDescriptor("1", new LinkedList<>(), 3, 1),
                 new ChunkDescriptor("2", new LinkedList<>(), 2, 2))));
@@ -167,7 +168,7 @@ public class PutChunkJobGeneratorTest {
         int chunkSize = 3;
         int byteOffset = 4;
         FileDescriptor file = new FileDescriptor(Paths.get("random_file"), 8, null,
-            new LinkedList<>(Arrays.asList(
+            new ArrayList<>(Arrays.asList(
                 new ChunkDescriptor("0", new LinkedList<>(), 2, 2))));
         InputStream data = new ByteArrayInputStream("abc".getBytes());
         PutChunkJobGenerator generator = new PutChunkJobGenerator(masterClient, chunkClient, chunkSize, file, data, byteOffset);

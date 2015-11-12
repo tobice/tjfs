@@ -141,7 +141,7 @@ public class JobExecutorTest {
     public void testProducerFailure() throws TjfsException {
         // In this scenario, the jobs are okay but it's the producer that fails some time along
         // the way.
-        
+
         IJobProducer producer = () -> {
             if (nextJobId == 14) {
                 throw new UnableToProduceJobException("Failed to produce next job");
