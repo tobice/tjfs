@@ -2,9 +2,10 @@ package edu.uno.cs.tjfs.client;
 
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.FileDescriptor;
 import edu.uno.cs.tjfs.common.threads.JobExecutor;
 
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.Date;
 
@@ -21,17 +22,61 @@ public class TjfsClient implements ITjfsClient {
 
     @Override
     public InputStream get(Path path) throws TjfsClientException {
-        return null;
+        return this.get(path, 0, Integer.MAX_VALUE);
     }
 
     @Override
     public InputStream get(Path path, int byteOffset) throws TjfsClientException {
-        return null;
+        return this.get(path, byteOffset, Integer.MAX_VALUE);
     }
 
     @Override
     public InputStream get(Path path, int byteOffset, int numberOfBytes) throws TjfsClientException {
-        return null;
+        try {
+            FileDescriptor file = masterClient.getFile(path);
+
+            // If an "infinity" is used, it means read the whole file. I know, I know, naming
+            // conventions...
+            final int length = numberOfBytes == Integer.MAX_VALUE ? file.getSize() : numberOfBytes;
+
+            if (file.isEmpty()) {
+                throw new TjfsException("File is empty / does not exist");
+            }
+            if (byteOffset + length > file.getSize()) {
+                throw new TjfsException("Reading out of file range");
+            }
+
+            // "Pipe" incoming data from the chunk servers directly to the user.
+            final PipedInputStream inputStream = new PipedInputStream(config.getPipeBufferSize());
+            final PipedOutputStream outputStream = new PipedOutputStream(inputStream);
+
+            Thread thread = new Thread(() -> {
+                try {
+                    // Use the producer to generate jobs that will fetch the chunks from the
+                    // chunk servers in parallel and write them into the output stream
+                    GetChunkJobProducer producer = new GetChunkJobProducer(chunkClient,
+                        outputStream, config.getChunkSize(), file, byteOffset, length);
+                    JobExecutor executor = new JobExecutor(producer, config.getExecutorPoolSize(),
+                        config.getExecutorQueueSize());
+                    executor.execute();
+                } catch (TjfsException e) {
+                    try {
+                        // TODO: What now ??
+                        System.out.println(e.getMessage());
+                        outputStream.close();
+                        inputStream.close();
+                    } catch (IOException e1) {
+                        // TODO: What now ??
+                    }
+                }
+            });
+            thread.start();
+
+            return inputStream;
+        } catch (TjfsException|IOException e) {
+            String message = "File transfer failed. Reason: " + e.getMessage();
+            throw new TjfsClientException(message, e);
+        }
     }
 
     @Override

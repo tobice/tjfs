@@ -2,7 +2,6 @@ package edu.uno.cs.tjfs.client;
 
 import edu.uno.cs.tjfs.common.ChunkDescriptor;
 import edu.uno.cs.tjfs.common.IChunkClient;
-import edu.uno.cs.tjfs.common.TjfsException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

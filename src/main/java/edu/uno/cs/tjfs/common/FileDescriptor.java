@@ -62,4 +62,12 @@ public class FileDescriptor {
     public int getSize() {
         return chunks.stream().mapToInt(chunk -> chunk.size).sum();
     }
+
+    /**
+     * Returns if the file is empty or it doesn't exist which is in our case equivalent.
+     * @return if it's empty
+     */
+    public boolean isEmpty() {
+        return getSize() == 0;
+    }
 }

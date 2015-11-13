@@ -9,6 +9,11 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * Job that will get a chunk from a chunk server and write the contents into an output stream.
+ * The job will wait for the previous job before writing to the output stream. This way we
+ * achieve that the data is written in a correct order.
+ */
 public class GetChunkJob extends WaitingJob {
     /** Chunk client to access chunk servers */
     protected final IChunkClient chunkClient;

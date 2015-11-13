@@ -10,6 +10,9 @@ import edu.uno.cs.tjfs.common.threads.UnableToProduceJobException;
 
 import java.io.OutputStream;
 
+/**
+ * Producer that will lazily generate get jobs for given file.
+ */
 public class GetChunkJobProducer implements IJobProducer {
 
     /** Chunk client to access chunk servers */

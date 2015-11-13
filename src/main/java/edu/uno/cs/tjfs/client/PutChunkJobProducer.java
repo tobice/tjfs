@@ -1,14 +1,15 @@
 package edu.uno.cs.tjfs.client;
 
-import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.threads.IJobProducer;
 import edu.uno.cs.tjfs.common.threads.Job;
 import edu.uno.cs.tjfs.common.threads.UnableToProduceJobException;
 
-import javax.rmi.CORBA.Util;
 import java.io.InputStream;
 
+/**
+ * Producer that will lazily generate put jobs from the incoming data.
+ */
 public class PutChunkJobProducer implements IJobProducer {
 
     /** Master client to access master server */

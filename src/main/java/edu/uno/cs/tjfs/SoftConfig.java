@@ -14,4 +14,8 @@ public class SoftConfig extends Config {
     public void setExecutorQueueSize(int executorQueueSize) {
         this.executorQueueSize = executorQueueSize;
     }
+
+    public void setPipeBufferSize(int pipeBufferSize) {
+        this.pipeBufferSize = pipeBufferSize;
+    }
 }
