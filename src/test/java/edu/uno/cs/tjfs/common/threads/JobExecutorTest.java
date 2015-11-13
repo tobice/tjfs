@@ -6,6 +6,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.util.ArrayList;
+
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -21,6 +23,9 @@ public class JobExecutorTest {
      */
     int nextJobId;
 
+    /** Previous instance of a job that the next job will wait for */
+    WaitingJob previousJob;
+
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
@@ -28,6 +33,7 @@ public class JobExecutorTest {
     public void setUp() {
         result = new int[20];
         nextJobId = 0;
+        previousJob = null;
     }
 
     @Test
@@ -182,5 +188,83 @@ public class JobExecutorTest {
             assertThat(nextJobId, is(14));
             throw e;
         }
+    }
+
+    @Test
+    public void testWaitingJobs() throws TjfsException {
+        // All 20 tests should run smoothly and finish. The difference here is that we're trying
+        // to enforce the order in which the jobs finish using WaitingJobs.
+
+        final ArrayList<Integer> list = new ArrayList<>();
+        IJobProducer producer = () -> {
+            if (nextJobId == 20) {
+                return null;
+            }
+            WaitingJob job = new WaitingJob(previousJob) {
+                private int jobId = nextJobId++;
+
+                @Override
+                public void runWithWaiting() {
+                    try {
+                        if (jobId < 10) {
+                            Thread.sleep(500 - jobId * 25); // simulate different finish times
+                        } else {
+                            Thread.sleep(jobId * 25);
+                        }
+                        waitForPreviousJob();
+                        list.add(jobId);
+                    } catch (InterruptedException e) {
+                        // Do nothing
+                    }
+                }
+            };
+            previousJob = job;
+            return job;
+        };
+
+        JobExecutor executor = new JobExecutor(producer, 3, 3);
+        executor.execute();
+
+        // Verify the order in which the jobs finished.
+        for (int i = 0; i < 20; i++) {
+            assertThat(list.get(i), equalTo(i));
+        }
+    }
+
+    @Test
+    public void testFailingWaitingJobs() throws TjfsException {
+        // Test failure with waiting jobs.
+
+        final ArrayList<Integer> list = new ArrayList<>();
+        IJobProducer producer = () -> {
+            if (nextJobId == 20) {
+                return null;
+            }
+            WaitingJob job = new WaitingJob(previousJob) {
+                private int jobId = nextJobId++;
+
+                @Override
+                public void runWithWaiting() {
+                    try {
+                        Thread.sleep(500 - jobId * 25);
+                        if (jobId == 3) {
+                            notifyFailure(new TjfsException("Failed"));
+                        }
+                        waitForPreviousJob();
+                        list.add(jobId);
+                    } catch (InterruptedException e) {
+                        // Do nothing
+                    }
+                }
+            };
+            previousJob = job;
+            return job;
+        };
+
+        exception.expect(TjfsException.class);
+        exception.expectMessage("Failed");
+
+        JobExecutor executor = new JobExecutor(producer, 3, 3);
+        executor.execute();
     }
 }

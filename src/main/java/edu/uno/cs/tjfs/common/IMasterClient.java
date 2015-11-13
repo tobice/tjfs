@@ -28,5 +28,5 @@ public interface IMasterClient {
      * @param file descriptor containing all metadata including the updated chunks.
      * @throws TjfsException
      */
-    void updateFile(FileDescriptor file) throws TjfsException;
+    void putFile(FileDescriptor file) throws TjfsException;
 }

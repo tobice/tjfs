@@ -9,6 +9,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Job that will put a new chunk to a chunk server. If necessary, it will first download the old
+ * chunk, merge with the new chunk and push the final data to a chunk server.
+ */
 public class PutChunkJob extends Job {
     // final static Logger logger = Logger.getLogger(PutChunkJob.class);
 

@@ -4,7 +4,6 @@ import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.threads.JobExecutor;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Date;
@@ -57,7 +56,7 @@ public class TjfsClient implements ITjfsClient {
             executor.execute(); // ...might throw an exception.
 
             // Update the descriptor.
-            masterClient.updateFile(file);
+            masterClient.putFile(file);
 
             // TODO: Unlock the file
         } catch (TjfsException e) {

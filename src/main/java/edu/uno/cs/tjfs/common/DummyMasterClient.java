@@ -42,7 +42,7 @@ public class DummyMasterClient implements IMasterClient {
     }
 
     @Override
-    public void updateFile(FileDescriptor file) throws TjfsException {
+    public void putFile(FileDescriptor file) throws TjfsException {
         files.put(file.path, file);
     }
 
