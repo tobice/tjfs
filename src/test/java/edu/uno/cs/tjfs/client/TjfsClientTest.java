@@ -22,7 +22,6 @@ import static org.hamcrest.CoreMatchers.*;
 
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -35,7 +34,6 @@ public class TjfsClientTest {
 
     @Mock
     IChunkClient chunkClient;
-
 
     @Before
     public void setUp() throws Exception {
@@ -78,6 +76,4 @@ public class TjfsClientTest {
         assertThat(result[1], equalTo("def"));
         assertThat(result[2], equalTo("gh"));
     }
-
-
 }
