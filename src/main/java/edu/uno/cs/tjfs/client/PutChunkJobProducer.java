@@ -41,6 +41,7 @@ public class PutChunkJobProducer implements IJobProducer {
      * @param byteOffset position in the file where to start write the data
      */
     public PutChunkJobProducer(IMasterClient masterClient, IChunkClient chunkClient, int chunkSize, FileDescriptor file, InputStream data, int byteOffset) {
+        // TODO: remove master client dependency
         this.masterClient = masterClient;
         this.chunkClient = chunkClient;
         this.chunkSize = chunkSize;
