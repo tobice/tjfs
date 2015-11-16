@@ -65,7 +65,12 @@ public class ChunkClient implements IChunkClient {
 
         try{
             put(chunkDescriptor.chunkServers.get(0), chunkDescriptor.name, length, data);
-            replicateAsync(chunkDescriptor.chunkServers.get(0), chunkDescriptor.chunkServers.get(1), chunkDescriptor.name);
+            try {
+                replicateAsync(chunkDescriptor.chunkServers.get(0), chunkDescriptor.chunkServers.get(1), chunkDescriptor.name);
+            }catch(Exception e){
+                BaseLogger.info("Error: " + e.getMessage());
+            }
+
         }catch(Exception e){
             put(chunkDescriptor.chunkServers.get(1), chunkDescriptor.name, length, data);
         }
