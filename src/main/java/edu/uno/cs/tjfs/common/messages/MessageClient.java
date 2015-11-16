@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.common.messages;
 
+import edu.uno.cs.tjfs.common.BaseLogger;
 import edu.uno.cs.tjfs.common.Machine;
 import edu.uno.cs.tjfs.common.MessageParser;
 import org.apache.commons.io.IOUtils;
@@ -11,6 +12,7 @@ import java.net.Socket;
 
 public class MessageClient implements IMessageClient {
     public Response send(Machine machine, Request request) throws BadRequestException, BadResponseException, ConnectionFailureException{
+        BaseLogger.info("Sending a message to " + machine.ip + " at " + machine.port);
         InetAddress address;
         Socket socket;
         InputStream socketInStream;
@@ -33,6 +35,10 @@ public class MessageClient implements IMessageClient {
             IOUtils.copy(outGoingMessage, socketOutStream);
             socketInStream = socket.getInputStream();
 
+
+            socketOutStream.flush();
+            //socketInStream.close();
+            //socketOutStream.close();
         }
         catch (Exception e){
             throw new ConnectionFailureException(e.getMessage());
@@ -70,9 +76,9 @@ public class MessageClient implements IMessageClient {
             IOUtils.copy(outGoingMessage, socketOutStream);
 
             socketOutStream.flush();
-            socketOutStream.close();
+            //socketOutStream.close();
 
-            socket.close();
+            //socket.close();
         }
         catch (Exception e){
             throw new ConnectionFailureException(e.getMessage());

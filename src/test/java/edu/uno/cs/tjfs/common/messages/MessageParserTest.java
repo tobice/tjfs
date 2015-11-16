@@ -60,7 +60,7 @@ public class MessageParserTest {
         stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
 
         exception.expect(MessageParseException.class);
-        exception.expectMessage("Invalid header.");
+        exception.expectMessage("Invalid Header.");
         parser.fromStream(stream);
     }
 
@@ -134,7 +134,7 @@ public class MessageParserTest {
         stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
 
         exception.expect(MessageParseException.class);
-        exception.expectMessage("Invalid header.");
+        exception.expectMessage("Invalid Header.");
         parser.fromStreamToResponse(stream, MCommand.GET_CHUNK.responseClass);
     }
 

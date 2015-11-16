@@ -1,59 +1,47 @@
 package edu.uno.cs.tjfs.common;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import edu.uno.cs.tjfs.common.messages.*;
-import edu.uno.cs.tjfs.common.messages.arguments.GetChunkRequestArgs;
 import edu.uno.cs.tjfs.common.messages.arguments.IMessageArgs;
 import edu.uno.cs.tjfs.common.messages.MCode;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.apache.commons.io.IOUtils.*;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 public class MessageParser {
     final static Logger logger = Logger.getLogger(MessageParser.class);
     public Request fromStream (InputStream stream) throws MessageParseException, IOException{
-        String jsonMessage;
-        String header;
-        int rawLength;
+        Request result;
         try {
-
-            header = IOUtils.toString(IOUtils.toByteArray(stream, 2), "UTF-8");
+            String header = IOUtils.toString(IOUtils.toByteArray(stream, 2), "UTF-8");
 
             int argsLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
 
-            rawLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
+            int rawLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
 
-            jsonMessage = IOUtils.toString(IOUtils.toByteArray(stream, argsLength), "UTF-8");
+            String jsonMessage = IOUtils.toString(IOUtils.toByteArray(stream, argsLength), "UTF-8");
 
-        }catch(Exception e){
-            throw new MessageParseException("Cannot Consume Message");
-        }
-
-        MCommand command;
-        try {
+            MCommand command;
             command = MCommand.of(header);
-        }catch(Exception e){
-            throw new MessageParseException("Invalid header.");
-        }
 
-        Gson gson = new Gson();
-        Request result;
-        try {
+            Gson gson = new Gson();
             IMessageArgs messageArgs = (IMessageArgs) gson.fromJson(jsonMessage, command.requestClass);
-            if (messageArgs == null) throw new Exception("");
+            if (messageArgs == null) throw new JsonSyntaxException("");
             result = new Request(command, messageArgs, stream, rawLength);
-        }catch (Exception e){
-            throw new MessageParseException("Cannot parse Request.");
+        }catch (IOException e){
+            throw new MessageParseException("Invalid Stream,", e);
+        }catch(IllegalArgumentException e){
+            throw new MessageParseException("Invalid Header.", e);
+        }catch (JsonSyntaxException e) {
+            throw new MessageParseException("Invalid args.", e);
         }
         return result;
     }
@@ -80,38 +68,32 @@ public class MessageParser {
     }
 
     public Response fromStreamToResponse(InputStream stream, Class responseArgsClass) throws MessageParseException{
-        String jsonMessage;
-        String header;
-        int rawLength;
+        Response result;
         try {
-
-            header = IOUtils.toString(IOUtils.toByteArray(stream, 2), "UTF-8");
+            BaseLogger.info("Converting the stream to response");
+            String header = IOUtils.toString(IOUtils.toByteArray(stream, 2), "UTF-8");
+            BaseLogger.info("Header is " + header);
 
             int argsLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
 
-            rawLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
+            int rawLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
 
-            jsonMessage = IOUtils.toString(IOUtils.toByteArray(stream, argsLength), "UTF-8");
+            String jsonMessage = IOUtils.toString(IOUtils.toByteArray(stream, argsLength), "UTF-8");
 
-        }catch(Exception e){
-            throw new MessageParseException("Cannot Consume Message");
-        }
+            MCode code = MCode.of(header);
 
-        MCode code;
-        try {
-            code = MCode.of(header);
-        }catch(Exception e){
-            throw new MessageParseException("Invalid header.");
-        }
-
-        Gson gson = new Gson();
-        Response result;
-        try {
+            Gson gson = new Gson();
             IMessageArgs messageArgs = (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
-            if (messageArgs == null) throw new Exception("");
+            if (messageArgs == null) throw new JsonSyntaxException("");
             result = new Response(code, messageArgs, stream, rawLength);
-        }catch (Exception e){
-            throw new MessageParseException("Cannot parse Response.");
+
+        }catch(IOException e){
+            BaseLogger.info(e.getMessage());
+            throw new MessageParseException("Cannot consume message.", e);
+        }catch(IllegalArgumentException e) {
+            throw new MessageParseException("Invalid Header.", e);
+        }catch(JsonSyntaxException e){
+            throw new MessageParseException("Cannot parse Response.", e);
         }
         return result;
     }
@@ -127,12 +109,16 @@ public class MessageParser {
                         String.format("%010d", response.dataLength) + jsonMessage;
 
         InputStream stream = IOUtils.toInputStream(message, StandardCharsets.UTF_8);
-
-        //Create one stream from the two streams
-        List<InputStream> result = Arrays.asList(
-                stream,
-                response.data
-        );
-        return new SequenceInputStream(Collections.enumeration(result));
+        if (response.data != null) {
+            //Create one stream from the two streams
+            List<InputStream> result = Arrays.asList(
+                    stream,
+                    response.data
+            );
+            return new SequenceInputStream(Collections.enumeration(result));
+        }
+        else{
+            return stream;
+        }
     }
 }
