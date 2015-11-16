@@ -76,9 +76,9 @@ public class MessageClient implements IMessageClient {
             IOUtils.copy(outGoingMessage, socketOutStream);
 
             socketOutStream.flush();
-            //socketOutStream.close();
+            socketOutStream.close();
 
-            //socket.close();
+            socket.close();
         }
         catch (Exception e){
             throw new ConnectionFailureException(e.getMessage());

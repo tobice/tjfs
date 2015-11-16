@@ -31,8 +31,11 @@ public class MessageServer {
                 Response response = this.server.process(parser.fromStream(socketInputStream));
 
 
-
-                IOUtils.copy(parser.toStreamFromResponse(response), socketOutputStream);
+                try {
+                    IOUtils.copy(parser.toStreamFromResponse(response), socketOutputStream);
+                }catch(Exception e){
+                    //TODO: what should i do
+                }
 
 
 

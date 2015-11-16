@@ -32,7 +32,7 @@ public class LocalFsClient implements ILocalFsClient {
             int read = 0;
             byte[] bytes = new byte[1];
             int counter = 0;
-            while (counter < 3 && (read = inputStream.read(bytes)) != -1) {
+            while (counter < dataLength && (read = inputStream.read(bytes)) != -1) {
                 BaseLogger.info("wrote to file");
                 outputStream.write(bytes);
                 counter++;

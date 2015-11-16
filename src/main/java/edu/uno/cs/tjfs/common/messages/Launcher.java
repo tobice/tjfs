@@ -21,7 +21,7 @@ public class Launcher {
 
             LocalFsClient localFsClient = new LocalFsClient();
 
-            InputStream dataStream = localFsClient.readFile(Paths.get("U:\\datafiles\\testChunk.txt"));
+            InputStream dataStream = localFsClient.readFile(Paths.get("testChunk"));
 
             Machine machine = new Machine("127.0.0.1", 6002);
 
