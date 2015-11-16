@@ -110,10 +110,12 @@ public class ChunkServer implements IServer {
             InputStream stream = this.localFsClient.readFile(Paths.get(args));
             int dataLength = IOUtils.toByteArray(stream).length;
 
+            InputStream stream1 = this.localFsClient.readFile(Paths.get(args));
+
             ChunkDescriptor chunkDescriptor = new ChunkDescriptor(args,
                     new LinkedList<>(Arrays.asList(machine)), dataLength, 0);
 
-            this.chunkClient.putAsync(machine, args , dataLength, stream);
+            this.chunkClient.putAsync(machine, args , dataLength, stream1);
             response = null; //TODO: it does not matter if i return anything this socket connection would be terminated
         }catch(Exception e){
             BaseLogger.info("Error while replicating chunk : " + e.getMessage());
