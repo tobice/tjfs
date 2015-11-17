@@ -49,4 +49,7 @@ hs_err_pid*
 ##Testfiles
 testChunk
 
+##Logfiles
+log/
+
 target

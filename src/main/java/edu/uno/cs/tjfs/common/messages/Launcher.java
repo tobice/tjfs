@@ -29,7 +29,7 @@ public class Launcher {
 
             chunkClient.put(chunkDescriptor, data.length, new ByteArrayInputStream(data));
         }catch(Exception e){
-            System.out.println(e.getMessage());
+            System.out.println("Error is " + e.getMessage());
         }
     }
 }

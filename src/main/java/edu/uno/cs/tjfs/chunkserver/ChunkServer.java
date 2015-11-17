@@ -67,7 +67,6 @@ public class ChunkServer implements IServer {
             String args = ((PutChunkRequestArgs) request.args).chunkName;
             int dataLength = request.dataLength;
             BaseLogger.info("Data length is " + dataLength);
-            System.out.println(request.data);
             BaseLogger.info("Started writing to the chunk - Chunk name " + args + " of size - " + request.dataLength);
             this.localFsClient.writeBytesToFile(Paths.get(args), IOUtils.toByteArray(request.data, dataLength));
             BaseLogger.info("Finished writing to the chunk - Chunk name " + args + " of size - " + request.dataLength);
