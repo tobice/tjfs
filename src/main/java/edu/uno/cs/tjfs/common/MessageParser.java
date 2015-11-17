@@ -46,25 +46,29 @@ public class MessageParser {
         return result;
     }
 
-    public InputStream toStreamFromRequest(Request request){
-        Gson gson = new Gson();
-        String jsonMessage = gson.toJson(request.args);
+    public InputStream toStreamFromRequest(Request request) throws BadRequestException{
+        try {
+            Gson gson = new Gson();
+            String jsonMessage = gson.toJson(request.args);
 
-        //Create a message
-        String message =
-                        request.header.value +
-                        String.format("%010d", jsonMessage.length()) +
-                        String.format("%010d", request.dataLength) + jsonMessage;
+            //Create a message
+            String message =
+                    request.header.value +
+                            String.format("%010d", jsonMessage.length()) +
+                            String.format("%010d", request.dataLength) + jsonMessage;
 
-        InputStream stream = IOUtils.toInputStream(message, StandardCharsets.UTF_8);
+            InputStream stream = IOUtils.toInputStream(message, StandardCharsets.UTF_8);
 
-        //Create one stream from the two streams
-        List<InputStream> result = Arrays.asList(
-                stream,
-                request.data
-        );
+            //Create one stream from the two streams
+            List<InputStream> result = Arrays.asList(
+                    stream,
+                    request.data
+            );
 
-       return new SequenceInputStream(Collections.enumeration(result));
+            return new SequenceInputStream(Collections.enumeration(result));
+        }catch (Exception e){
+            throw new BadRequestException(e.getMessage(), request);
+        }
     }
 
     public Response fromStreamToResponse(InputStream stream, Class responseArgsClass) throws MessageParseException{
@@ -98,27 +102,30 @@ public class MessageParser {
         return result;
     }
 
-    public InputStream toStreamFromResponse(Response response){
-        Gson gson = new Gson();
-        String jsonMessage = gson.toJson(response.args);
+    public InputStream toStreamFromResponse(Response response) throws BadResponseException{
+        try {
+            Gson gson = new Gson();
+            String jsonMessage = gson.toJson(response.args);
 
-        //Create a message
-        String message =
-                response.code.value +
-                        String.format("%010d", jsonMessage.length()) +
-                        String.format("%010d", response.dataLength) + jsonMessage;
+            //Create a message
+            String message =
+                    response.code.value +
+                            String.format("%010d", jsonMessage.length()) +
+                            String.format("%010d", response.dataLength) + jsonMessage;
 
-        InputStream stream = IOUtils.toInputStream(message, StandardCharsets.UTF_8);
-        if (response.data != null) {
-            //Create one stream from the two streams
-            List<InputStream> result = Arrays.asList(
-                    stream,
-                    response.data
-            );
-            return new SequenceInputStream(Collections.enumeration(result));
-        }
-        else{
-            return stream;
+            InputStream stream = IOUtils.toInputStream(message, StandardCharsets.UTF_8);
+            if (response.data != null) {
+                //Create one stream from the two streams
+                List<InputStream> result = Arrays.asList(
+                        stream,
+                        response.data
+                );
+                return new SequenceInputStream(Collections.enumeration(result));
+            } else {
+                return stream;
+            }
+        }catch(Exception e){
+            throw new BadResponseException(e.getMessage(), response);
         }
     }
 }

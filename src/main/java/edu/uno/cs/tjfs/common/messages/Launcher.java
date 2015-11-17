@@ -9,9 +9,6 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 
-/**
- * Created by janak on 11/16/2015.
- */
 public class Launcher {
     public static void main(String[] args) throws IOException, TjfsException{
         try {
@@ -25,7 +22,7 @@ public class Launcher {
 
             Machine machine = new Machine("127.0.0.1", 6002);
 
-            LinkedList<Machine> machines = new LinkedList<Machine>();
+            LinkedList<Machine> machines = new LinkedList<>();
             machines.add(machine);
             machines.add(machine);
             ChunkDescriptor chunkDescriptor = new ChunkDescriptor("/home/srjanak/test/testChunk2", machines, data.length, 0);

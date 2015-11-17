@@ -65,7 +65,7 @@ public class MessageParserTest {
     }
 
     @Test
-    public void toStreamFromRequestTest() throws IOException, MessageParseException{
+    public void toStreamFromRequestTest() throws IOException, MessageParseException, BadRequestException{
         Gson gson = new Gson();
         GetChunkRequestArgs argsMessage = new GetChunkRequestArgs("testChunk");
         String jsonMessage = gson.toJson(argsMessage);
@@ -139,7 +139,7 @@ public class MessageParserTest {
     }
 
     @Test
-    public void toStreamFromResponse() throws IOException, MessageParseException{
+    public void toStreamFromResponse() throws IOException, MessageParseException, BadResponseException{
         Gson gson = new Gson();
         GetChunkResponseArgs argsMessage = new GetChunkResponseArgs("");
         String jsonMessage = gson.toJson(argsMessage);

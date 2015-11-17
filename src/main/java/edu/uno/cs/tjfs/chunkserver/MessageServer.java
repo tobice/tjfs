@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.chunkserver;
 
+import edu.uno.cs.tjfs.common.BaseLogger;
 import edu.uno.cs.tjfs.common.MessageParser;
 import edu.uno.cs.tjfs.common.messages.Response;
 import org.apache.commons.io.IOUtils;
@@ -19,26 +20,21 @@ public class MessageServer {
         ServerSocket serverSocket = new ServerSocket(port);
         try
         {
-            System.out.println("ChunkServer Started and listening to the port " + port);
+            BaseLogger.info("MessageServer.start - ChunkServer Started and listening to the port " + port);
             while(true)
             {
                 //Reading the message from the client
                 Socket socket = serverSocket.accept();
                 InputStream socketInputStream = socket.getInputStream();
                 OutputStream socketOutputStream = socket.getOutputStream();
-
-                MessageParser parser = new MessageParser();
-                Response response = this.server.process(parser.fromStream(socketInputStream));
-
-
                 try {
+                    MessageParser parser = new MessageParser();
+                    Response response = this.server.process(parser.fromStream(socketInputStream));
                     IOUtils.copy(parser.toStreamFromResponse(response), socketOutputStream);
                 }catch(Exception e){
-                    //TODO: what should i do
+                    BaseLogger.error("MessageServer.start - " + e.getMessage());
+                    BaseLogger.error(e.getStackTrace().toString());
                 }
-
-
-
                 socketOutputStream.flush();
 
                 //socketInputStream.close();
@@ -47,7 +43,7 @@ public class MessageServer {
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            BaseLogger.error("MessageServer.start - Chunkserver start error " + e.getMessage());
         }
         finally
         {
@@ -55,7 +51,9 @@ public class MessageServer {
             {
                 //serverSocket.close();
             }
-            catch(Exception e){}
+            catch(Exception e){
+                BaseLogger.error("Server socket cannot be closed " + e.getMessage());
+            }
         }
     }
 }
