@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.chunkserver;
 
+import com.sun.crypto.provider.BlowfishKeyGenerator;
 import edu.uno.cs.tjfs.client.TjfsClientException;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.*;
@@ -49,12 +50,12 @@ public class ChunkServer implements IServer {
     }
 
     private Response processGetChunk(Request request) throws TjfsException{
+        BaseLogger.trace("Chunkserver.processChunk - started to get the chunk");
         Response response;
         try {
             String args = ((GetChunkRequestArgs) request.args).chunkName;
-            InputStream stream = this.localFsClient.readFile(Paths.get(args));
-            int dataLength = IOUtils.toByteArray(stream).length;
-            response = new Response(MCode.SUCCESS, null, stream, dataLength);
+            byte[] data = this.localFsClient.readBytesFromFile(Paths.get(args));
+            response = new Response(MCode.SUCCESS, (new GetChunkResponseArgs("")), new ByteArrayInputStream(data), data.length);
         }catch(Exception e){
             response = new Response(MCode.ERROR, (new GetChunkResponseArgs(e.getMessage())), null, 0);
         }

@@ -8,6 +8,7 @@ import edu.uno.cs.tjfs.common.messages.MCode;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
@@ -59,13 +60,17 @@ public class MessageParser {
 
             InputStream stream = IOUtils.toInputStream(message, StandardCharsets.UTF_8);
 
-            //Create one stream from the two streams
-            List<InputStream> result = Arrays.asList(
-                    stream,
-                    request.data
-            );
-
-            return new SequenceInputStream(Collections.enumeration(result));
+            if (request.data == null){
+                return stream;
+            }
+            else {
+                //Create one stream from the two streams
+                List<InputStream> result = Arrays.asList(
+                        stream,
+                        request.data
+                );
+                return new SequenceInputStream(Collections.enumeration(result));
+            }
         }catch (Exception e){
             throw new BadRequestException(e.getMessage(), request);
         }
@@ -79,17 +84,20 @@ public class MessageParser {
             BaseLogger.info("Header is " + header);
 
             int argsLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
+            BaseLogger.info("Argument length is " + argsLength);
 
             int rawLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
+            BaseLogger.info("Raw length is " + rawLength);
 
             String jsonMessage = IOUtils.toString(IOUtils.toByteArray(stream, argsLength), "UTF-8");
+            BaseLogger.info("Json message is " + jsonMessage);
 
             MCode code = MCode.of(header);
 
             Gson gson = new Gson();
             IMessageArgs messageArgs = (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
             if (messageArgs == null) throw new JsonSyntaxException("");
-            result = new Response(code, messageArgs, stream, rawLength);
+            result = new Response(code, messageArgs, new ByteArrayInputStream(IOUtils.toByteArray(stream, rawLength)), rawLength);
 
         }catch(IOException e){
             BaseLogger.info(e.getMessage());
