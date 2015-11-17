@@ -4,6 +4,7 @@ import edu.uno.cs.tjfs.common.TjfsException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.ClosedChannelException;
 import java.util.Arrays;
 
 /**
@@ -40,6 +41,10 @@ public class ChunkChopper {
             } else {
                 return chunk;
             }
+        }
+        catch(ClosedChannelException e) {
+            // TODO: test
+            return null;
         } catch (IOException e) {
             throw new TjfsException("Chopping chunk from the data stream failed. ", e);
         }
