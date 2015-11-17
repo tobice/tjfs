@@ -46,4 +46,10 @@ hs_err_pid*
 *.ipr
 *.iws
 
+##Testfiles
+testChunk
+
+##Logfiles
+log/
+
 target

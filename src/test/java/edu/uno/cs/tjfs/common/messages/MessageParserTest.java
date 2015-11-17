@@ -60,12 +60,12 @@ public class MessageParserTest {
         stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
 
         exception.expect(MessageParseException.class);
-        exception.expectMessage("Invalid header.");
+        exception.expectMessage("Invalid Header.");
         parser.fromStream(stream);
     }
 
     @Test
-    public void toStreamFromRequestTest() throws IOException, MessageParseException{
+    public void toStreamFromRequestTest() throws IOException, MessageParseException, BadRequestException{
         Gson gson = new Gson();
         GetChunkRequestArgs argsMessage = new GetChunkRequestArgs("testChunk");
         String jsonMessage = gson.toJson(argsMessage);
@@ -134,12 +134,12 @@ public class MessageParserTest {
         stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
 
         exception.expect(MessageParseException.class);
-        exception.expectMessage("Invalid header.");
+        exception.expectMessage("Invalid Header.");
         parser.fromStreamToResponse(stream, MCommand.GET_CHUNK.responseClass);
     }
 
     @Test
-    public void toStreamFromResponse() throws IOException, MessageParseException{
+    public void toStreamFromResponse() throws IOException, MessageParseException, BadResponseException{
         Gson gson = new Gson();
         GetChunkResponseArgs argsMessage = new GetChunkResponseArgs("");
         String jsonMessage = gson.toJson(argsMessage);

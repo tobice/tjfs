@@ -6,4 +6,5 @@ public class MessageException extends TjfsException {
     public MessageException(String s) {
         super(s);
     }
+    public MessageException(String s, Throwable e){ super (s, e); }
 }
