@@ -46,6 +46,8 @@ public class TjfsClient implements ITjfsClient {
                 throw new TjfsException("Reading out of file range");
             }
 
+            // TODO: lock file
+
             // "Pipe" incoming data from the chunk servers directly to the user.
             final PipedInputStream inputStream = new PipedInputStream(config.getPipeBufferSize());
             final PipedOutputStream outputStream = new PipedOutputStream(inputStream);
@@ -68,6 +70,8 @@ public class TjfsClient implements ITjfsClient {
                     } catch (IOException e1) {
                         // TODO: What now ??
                     }
+                } finally {
+                    // TODO: unlock file
                 }
             });
             thread.start();
