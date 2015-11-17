@@ -64,7 +64,6 @@ public class TjfsClient implements ITjfsClient {
                 } catch (TjfsException e) {
                     try {
                         // TODO: What now ??
-                        System.out.println(e.getMessage());
                         outputStream.close();
                         inputStream.close();
                     } catch (IOException e1) {
