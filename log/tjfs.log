@@ -34567,3 +34567,4 @@
 2015-11-17 09:11:21 INFO  BaseLogger:11 - Ending the process and replying with a request
 2015-11-17 09:11:21 INFO  BaseLogger:11 - Header is 90
 2015-11-17 09:11:21 TRACE BaseLogger:32 - MessageClient.SendAsyc - Finished sending the message asynchronously.
+2015-11-17 12:12:54 INFO  BaseLogger:11 - MessageClient.send - Sending a message to 192.168.43.218 at 6002

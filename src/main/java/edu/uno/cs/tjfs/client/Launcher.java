@@ -1,13 +1,20 @@
 package edu.uno.cs.tjfs.client;
 
-import edu.uno.cs.tjfs.common.ILocalFsClient;
-import edu.uno.cs.tjfs.common.LocalFsClient;
+import edu.uno.cs.tjfs.Config;
+import edu.uno.cs.tjfs.SoftConfig;
+import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.messages.IMessageClient;
+import edu.uno.cs.tjfs.common.messages.MessageClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class Launcher {
+    protected static SoftConfig config;
+    protected static IMessageClient messageClient;
+    protected static IMasterClient masterClient;
+    protected static IChunkClient chunkClient;
     protected static ITjfsClient tjfsClient;
     protected static ILocalFsClient localFsClient;
     protected static IClient client;
@@ -23,8 +30,15 @@ public class Launcher {
         // If the commands are piped in (changes the output slightly)
         boolean piped = args.length > 0 && args[0].equals("-piped");
 
+        config = new SoftConfig();
+        config.setChunkSize(1024);
+
+        messageClient = new MessageClient();
+        masterClient = new DummyMasterClient();
+        chunkClient = new ChunkClient(messageClient);
+
         // Create instance of tjfs client that will connect to the remote filesystem
-        tjfsClient = new DummyTjfsClient();
+        tjfsClient = new TjfsClient(config, masterClient, chunkClient);
 
         // Create instance of local fs client to gain access to local filesystem
         localFsClient = new LocalFsClient();

@@ -17,10 +17,8 @@ public class DummyMasterClient implements IMasterClient {
     private Map<Path, FileDescriptor> files = new HashMap<>();
 
     public DummyMasterClient() {
-        chunkServers.add(new Machine("127.0.0.1", 8000));
-        chunkServers.add(new Machine("127.0.0.1", 8001));
-        chunkServers.add(new Machine("127.0.0.1", 8002));
-        chunkServers.add(new Machine("127.0.0.1", 8003));
+        chunkServers.add(new Machine("192.168.43.27", 6002));
+        chunkServers.add(new Machine("192.168.43.218", 6002));
     }
 
     @Override
