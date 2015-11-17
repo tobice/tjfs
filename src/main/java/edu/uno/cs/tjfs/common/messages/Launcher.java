@@ -21,20 +21,16 @@ public class Launcher {
 
             LocalFsClient localFsClient = new LocalFsClient();
 
-            InputStream dataStream = localFsClient.readFile(Paths.get("testChunk"));
+            byte[] data = localFsClient.readBytesFromFile(Paths.get("/home/srjanak/test/testChunk"));
 
             Machine machine = new Machine("127.0.0.1", 6002);
 
             LinkedList<Machine> machines = new LinkedList<Machine>();
             machines.add(machine);
             machines.add(machine);
+            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("/home/srjanak/test/testChunk2", machines, data.length, 0);
 
-
-            byte[] fileInMemorey = IOUtils.toByteArray(dataStream);
-
-            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("testChunk", machines, fileInMemorey.length, 0);
-
-            chunkClient.put(chunkDescriptor, fileInMemorey.length, new ByteArrayInputStream(fileInMemorey));
+            chunkClient.put(chunkDescriptor, data.length, new ByteArrayInputStream(data));
         }catch(Exception e){
             System.out.println(e.getMessage());
         }

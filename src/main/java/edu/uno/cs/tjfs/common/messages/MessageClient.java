@@ -56,32 +56,13 @@ public class MessageClient implements IMessageClient {
     }
 
     public void sendAsync(Machine machine, Request request) throws BadRequestException, ConnectionFailureException{
-        InetAddress address;
-        Socket socket;
-        OutputStream socketOutStream;
-        InputStream outGoingMessage;
-        MessageParser parser = new MessageParser();
-        try{
-            outGoingMessage = parser.toStreamFromRequest(request);
-        }
-        catch(Exception e){
-            throw new BadRequestException(e.getMessage(), request);
-        }
-
-        try {
-            address = InetAddress.getByName(machine.ip);
-            socket = new Socket(address, machine.port);
-
-            socketOutStream = socket.getOutputStream();
-            IOUtils.copy(outGoingMessage, socketOutStream);
-
-            socketOutStream.flush();
-            socketOutStream.close();
-
-            socket.close();
-        }
-        catch (Exception e){
-            throw new ConnectionFailureException(e.getMessage());
-        }
+        Thread thread = new Thread(() -> {
+            try {
+                send(machine, request);
+            } catch (Exception e) {
+                BaseLogger.error(e.getMessage());
+            }
+        });
+        thread.start();
     }
 }
