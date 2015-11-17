@@ -7,6 +7,7 @@ import edu.uno.cs.tjfs.common.messages.arguments.*;
 import org.apache.commons.io.IOUtils;
 
 import java.awt.*;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -68,7 +69,7 @@ public class ChunkServer implements IServer {
             BaseLogger.info("Data length is " + dataLength);
             System.out.println(request.data);
             BaseLogger.info("Started writing to the chunk - Chunk name " + args + " of size - " + request.dataLength);
-            LocalFsClient.writeFileT(Paths.get(args), request.data, request.dataLength);
+            this.localFsClient.writeBytesToFile(Paths.get(args), IOUtils.toByteArray(request.data, dataLength));
             BaseLogger.info("Finished writing to the chunk - Chunk name " + args + " of size - " + request.dataLength);
             response = new Response(MCode.SUCCESS, (new PutChunkResponseArgs("")), null, 0);
         }catch(Exception e){
@@ -107,15 +108,9 @@ public class ChunkServer implements IServer {
             String args = ((ReplicateChunkRequestArgs) request.args).chunkName;
             Machine machine = ((ReplicateChunkRequestArgs) request.args).machine;
 
-            InputStream stream = this.localFsClient.readFile(Paths.get(args));
-            int dataLength = IOUtils.toByteArray(stream).length;
+            byte[] data = this.localFsClient.readBytesFromFile(Paths.get(args));
 
-            InputStream stream1 = this.localFsClient.readFile(Paths.get(args));
-
-            ChunkDescriptor chunkDescriptor = new ChunkDescriptor(args,
-                    new LinkedList<>(Arrays.asList(machine)), dataLength, 0);
-
-            this.chunkClient.putAsync(machine, args , dataLength, stream1);
+            this.chunkClient.putAsync(machine, args , data.length, new ByteArrayInputStream(data));
             response = null; //TODO: it does not matter if i return anything this socket connection would be terminated
         }catch(Exception e){
             BaseLogger.info("Error while replicating chunk : " + e.getMessage());
