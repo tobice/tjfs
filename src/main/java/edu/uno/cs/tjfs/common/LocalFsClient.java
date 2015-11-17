@@ -1,5 +1,8 @@
 package edu.uno.cs.tjfs.common;
 
+import org.apache.commons.io.IOUtils;
+
+import java.awt.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,5 +23,17 @@ public class LocalFsClient implements ILocalFsClient {
         } finally {
             data.close();
         }
+    }
+
+    @Override
+    public byte[] readBytesFromFile(Path path) throws IOException {
+        return IOUtils.toByteArray(Files.newInputStream(path));
+    }
+
+    @Override
+    public void writeBytesToFile(Path path, byte[] data) throws IOException {
+        FileOutputStream outStream = new FileOutputStream(path.toString());
+
+        outStream.write(data);
     }
 }
