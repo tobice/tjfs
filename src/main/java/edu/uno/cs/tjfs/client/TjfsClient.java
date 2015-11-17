@@ -62,6 +62,7 @@ public class TjfsClient implements ITjfsClient {
                         config.getExecutorQueueSize());
                     executor.execute();
                 } catch (TjfsException e) {
+                    e.printStackTrace();
                     try {
                         // TODO: What now ??
                         outputStream.close();

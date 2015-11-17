@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.client;
 
+import edu.uno.cs.tjfs.common.BaseLogger;
 import edu.uno.cs.tjfs.common.ChunkDescriptor;
 import edu.uno.cs.tjfs.common.IChunkClient;
 import edu.uno.cs.tjfs.common.TjfsException;
@@ -47,6 +48,7 @@ public class GetChunkJob extends WaitingJob {
     @Override
     public void runWithWaiting() {
         try {
+            BaseLogger.debug("Starting a new GetChunkJob for the chunk " + chunk.name);
             byte[] data = IOUtils.toByteArray(chunkClient.get(chunk));
 
             // If the previous job is not finished yet, let's wait for it.
@@ -54,10 +56,13 @@ public class GetChunkJob extends WaitingJob {
 
             // Write the stuff to the output stream.
             outputStream.write(data, byteOffset, length);
+            BaseLogger.debug("GetChunkJob finished, the chunk " + chunk.name + " was written");
+
             if (closeStream) {
                 outputStream.close();
             }
         } catch (TjfsException|IOException e) {
+            BaseLogger.error("GetChunkJob for the chunk " + chunk.name + " failed", e);
             notifyFailure(new TjfsException("Get chunk job failed. Reason: " + e.getMessage(), e));
         } catch (IndexOutOfBoundsException e) {
             notifyFailure(new TjfsException("Get chunk job failed. Too little incoming data", e));
