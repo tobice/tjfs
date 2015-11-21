@@ -26,13 +26,9 @@ public class Launcher {
 
             LinkedList<Machine> machines = new LinkedList<>();
             machines.add(machine);
-<<<<<<< Updated upstream
-            machines.add(machine);
-            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("0", machines, data.length, 1);
-=======
             machines.add(machine2);
-            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("testChunk", machines, data.length, 0);
->>>>>>> Stashed changes
+
+            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("0", machines, data.length, 1);
 
             String test = IOUtils.toString(IOUtils.toByteArray(chunkClient.get(chunkDescriptor)), "UTF-8");
             System.out.println("file is " + test);

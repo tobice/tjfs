@@ -105,7 +105,7 @@ public class MessageParserTest {
         String jsonMessage = gson.toJson(args);
 
         //Testing with no data stream
-        String testMessage = "90" + String.format("%010d", jsonMessage.length()) + String.format("%010d", 10) + jsonMessage;
+        String testMessage = "90" + String.format("%010d", jsonMessage.length()) + String.format("%010d", 0) + jsonMessage;
 
         MessageParser parser = new MessageParser();
         InputStream stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
@@ -114,9 +114,10 @@ public class MessageParserTest {
         assertTrue(response.code.value.equals(MCode.SUCCESS.value));
         assertTrue(((GetChunkResponseArgs) response.args).status.equals(args.status));
         assertTrue(IOUtils.toByteArray(response.data).length == 0);
-        assertTrue(response.dataLength == 10); //had set this to 10 for testing
+        assertTrue(response.dataLength == 0); //had set this to 0 for testing
 
         //testing with some data in the datastream
+        testMessage = "90" + String.format("%010d", jsonMessage.length()) + String.format("%010d", 10) + jsonMessage;
         testMessage += "0000000000";
         stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
         response = parser.fromStreamToResponse(stream, MCommand.GET_CHUNK.responseClass);
@@ -125,6 +126,7 @@ public class MessageParserTest {
         assertTrue(response.code == MCode.of("90"));
         assertTrue(((GetChunkResponseArgs) response.args).status.equals(args.status));
 
+        //System.out.println(IOUtils.toByteArray(response.data).length);
         //And also the data length now should be 10
         assertTrue(IOUtils.toByteArray(response.data).length == 10);
 
