@@ -21,11 +21,13 @@ public class Launcher {
 
             byte[] data = localFsClient.readBytesFromFile(Paths.get("1"));
 
-            Machine machine = new Machine("127.0.0.1", 6002);
+            Machine machine = new Machine("192.168.43.27", 6002);
+            Machine machine2 = new Machine("192.168.43.218", 6002);
 
             LinkedList<Machine> machines = new LinkedList<>();
             machines.add(machine);
-            machines.add(machine);
+            machines.add(machine2);
+
             ChunkDescriptor chunkDescriptor = new ChunkDescriptor("0", machines, data.length, 1);
 
             String test = IOUtils.toString(IOUtils.toByteArray(chunkClient.get(chunkDescriptor)), "UTF-8");

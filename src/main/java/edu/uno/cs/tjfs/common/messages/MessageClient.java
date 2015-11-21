@@ -17,9 +17,9 @@ public class MessageClient implements IMessageClient {
     public Response send(Machine machine, Request request) throws BadRequestException, BadResponseException, ConnectionFailureException{
         BaseLogger.info("MessageClient.send - Sending a message to " + machine.ip + " at " + machine.port);
         InetAddress address;
-        Socket socket;
-        InputStream socketInStream;
-        OutputStream socketOutStream;
+        Socket socket = null;
+        InputStream socketInStream = null;
+        OutputStream socketOutStream = null;
         InputStream outGoingMessage;
         Response result;
         try {
@@ -51,8 +51,16 @@ public class MessageClient implements IMessageClient {
             //BaseLogger.error(e);
             throw new ConnectionFailureException(e.getMessage());
         }
-
-        
+        finally {
+            try {
+                socketInStream.close();
+                socketOutStream.close();
+                socket.close();
+            }catch(Exception e){
+//                BaseLogger.error("MessageClient.send - The client socket cannot be closed.");
+//                BaseLogger.error("MessageClient.send", e);
+            }
+        }
         return result;
     }
 
