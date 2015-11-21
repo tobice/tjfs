@@ -49,6 +49,11 @@ public class ChunkServer implements IServer {
         return response;
     }
 
+    @Override
+    public Response process(Request request, int threadID) throws TjfsException {
+        return null;
+    }
+
     private Response processGetChunk(Request request) throws TjfsException{
         BaseLogger.trace("Chunkserver.processChunk - started to get the chunk");
         Response response;

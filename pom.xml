@@ -104,5 +104,10 @@
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
         </dependency>
+        <dependency>
+            <groupId>net.java.xadisk</groupId>
+            <artifactId>xadisk</artifactId>
+            <version>1.2.2</version>
+        </dependency>
     </dependencies>
 </project>

@@ -12,7 +12,7 @@ public class FileDescriptor {
     public final Date time;
 
     /** List of chunks that the file consists of */
-    protected final ArrayList<ChunkDescriptor> chunks;
+    public final ArrayList<ChunkDescriptor> chunks;
 
     public FileDescriptor(Path path, Date time, ArrayList<ChunkDescriptor> chunks) {
         this.path = path;
