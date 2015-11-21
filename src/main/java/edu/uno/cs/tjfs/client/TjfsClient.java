@@ -40,7 +40,7 @@ public class TjfsClient implements ITjfsClient {
             final int length = numberOfBytes == Integer.MAX_VALUE ? file.getSize() : numberOfBytes;
 
             if (file.isEmpty()) {
-                throw new TjfsException("File is empty / does not exist");
+                throw new TjfsException("File is empty (it does not exist)");
             }
             if (byteOffset + length > file.getSize()) {
                 throw new TjfsException("Reading out of file range");
@@ -48,8 +48,10 @@ public class TjfsClient implements ITjfsClient {
 
             // TODO: lock file
 
-            // "Pipe" incoming data from the chunk servers directly to the user.
+            // "Pipe" incoming data from the chunk servers directly to the user. The input stream
+            // is wrapped by another stream that lets us pass a possible exception to the end user.
             final PipedInputStream inputStream = new PipedInputStream(config.getPipeBufferSize());
+            final InputStreamWithFinalExceptionCheck inWithException = new InputStreamWithFinalExceptionCheck(inputStream);
             final PipedOutputStream outputStream = new PipedOutputStream(inputStream);
 
             Thread thread = new Thread(() -> {
@@ -62,21 +64,24 @@ public class TjfsClient implements ITjfsClient {
                         config.getExecutorQueueSize());
                     executor.execute();
                 } catch (TjfsException e) {
-                    e.printStackTrace();
+                    // If we fail, we pass the exception through the special stream to the end user.
                     try {
-                        // TODO: What now ??
                         outputStream.close();
-                        inputStream.close();
+                        inWithException.fail(new TjfsException("Downloading file failed. " +
+                            e.getMessage(), e));
                     } catch (IOException e1) {
-                        // TODO: What now ??
+                        inWithException.fail(new TjfsException("Downloading file failed. Plus " +
+                            "unable to close the stream with message: " + e1.getMessage(), e));
                     }
                 } finally {
-                    // TODO: unlock file
+                    // Let the stream know that it can throw the exception (because he has it now).
+                    inWithException.countDown();
+                    // TODO: unlock the file
                 }
             });
             thread.start();
 
-            return inputStream;
+            return inWithException;
         } catch (TjfsException|IOException e) {
             String message = "File transfer failed. Reason: " + e.getMessage();
             throw new TjfsClientException(message, e);

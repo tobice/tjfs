@@ -131,12 +131,11 @@ public class TjfsClientTest {
         when(chunkClient.get(file.getChunk(3))).thenReturn(new ByteArrayInputStream("jkl".getBytes()));
         when(chunkClient.get(file.getChunk(4))).thenThrow(new TjfsException("Some reason"));
 
-        // Seriously, a better message should be provided...
-        // exception.expect(IOException.class);
-        // exception.expectMessage("Pipe closed");
+        exception.expect(IOException.class);
+        exception.expectMessage("Downloading file failed. Get chunk job failed. Reason: Some reason");
 
-        // InputStream stream = tjfsClient.get(path);
-        // System.out.println("Stream: " + IOUtils.toString(stream));
-        // TODO: fix this test
+        InputStream stream = tjfsClient.get(path);
+        IOUtils.toString(stream);
+        stream.close();
     }
 }
