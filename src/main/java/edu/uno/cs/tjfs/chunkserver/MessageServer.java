@@ -20,22 +20,27 @@ public class MessageServer {
         ServerSocket serverSocket = new ServerSocket(port);
         try
         {
+            int id = 0;
             BaseLogger.info("MessageServer.start - ChunkServer Started and listening to the port " + port);
             while(true)
             {
                 //Reading the message from the client
-                Socket socket = serverSocket.accept();
-                InputStream socketInputStream = socket.getInputStream();
-                OutputStream socketOutputStream = socket.getOutputStream();
-                try {
-                    MessageParser parser = new MessageParser();
-                    Response response = this.server.process(parser.fromStream(socketInputStream));
-                    IOUtils.copy(parser.toStreamFromResponse(response), socketOutputStream);
-                }catch(Exception e){
-                    BaseLogger.error("MessageServer.start - " + e.getMessage());
-                    BaseLogger.error(e.getStackTrace().toString());
-                }
-                socketOutputStream.flush();
+                Socket clientSocket = serverSocket.accept();
+//                InputStream socketInputStream = socket.getInputStream();
+//                OutputStream socketOutputStream = socket.getOutputStream();
+//                try {
+//                    MessageParser parser = new MessageParser();
+//                    Response response = this.server.process(parser.fromStream(socketInputStream));
+//                    IOUtils.copy(parser.toStreamFromResponse(response), socketOutputStream);
+//                }catch(Exception e){
+//                    BaseLogger.error("MessageServer.start - " + e.getMessage());
+//                    BaseLogger.error(e.getStackTrace().toString());
+//                }
+//                socketOutputStream.flush();
+
+                MessageServerWorkerThread cliThread = new MessageServerWorkerThread
+                        (this.server, clientSocket, id++);
+                cliThread.start();
 
                 //socketInputStream.close();
                 //socketOutputStream.close();
