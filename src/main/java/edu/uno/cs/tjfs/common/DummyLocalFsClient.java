@@ -41,4 +41,9 @@ public class DummyLocalFsClient implements ILocalFsClient {
     public void writeBytesToFile(Path path, byte[] data) throws IOException {
 
     }
+
+    @Override
+    public String[] listFiles(Path path) {
+        return new String[0];
+    }
 }
