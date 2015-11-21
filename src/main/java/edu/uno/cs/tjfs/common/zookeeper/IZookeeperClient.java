@@ -21,10 +21,10 @@ public interface IZookeeperClient {
         void onMasterServerDown();
     }
 
-    void setOnChunkServerUpListener(IChunkServerUpListener listener);
-    void setOnChunkServerDownListener(IChunkServerDownListener listener);
-    void setOnMasterServerUpListener(IMasterServerUpListener listener);
-    void setOnMasterServerDownListener(IMasterServerDownListener listener);
+    void addOnChunkServerUpListener(IChunkServerUpListener listener);
+    void addOnChunkServerDownListener(IChunkServerDownListener listener);
+    void addOnMasterServerUpListener(IMasterServerUpListener listener);
+    void addOnMasterServerDownListener(IMasterServerDownListener listener);
 
     /**
      * Get current master server.

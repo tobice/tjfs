@@ -6,23 +6,71 @@ import edu.uno.cs.tjfs.common.messages.MCode;
 import edu.uno.cs.tjfs.common.messages.Request;
 import edu.uno.cs.tjfs.common.messages.Response;
 import edu.uno.cs.tjfs.common.messages.arguments.*;
+import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
+import edu.uno.cs.tjfs.common.zookeeper.ZnodeMissingException;
+import edu.uno.cs.tjfs.common.zookeeper.ZnodeTakenException;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperDownException;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class MasterServer implements IServer{
+public class MasterServer implements IServer, IZookeeperClient.IMasterServerDownListener {
     private MasterStorage storage;
-    public MasterServer(MasterStorage storage){
+    private ChunkServerService chunkServerService;
+    private IZookeeperClient zkClient;
+
+    private boolean amIShadow = true;
+
+    public MasterServer(MasterStorage storage, ChunkServerService chunkServerService,
+                        IZookeeperClient zkClient) {
         this.storage = storage;
+        this.chunkServerService = chunkServerService;
+        this.zkClient = zkClient;
     }
+
+    public void start() {
+        zkClient.addOnMasterServerDownListener(this);
+        storage.init();
+        attemptToBecomeMaster();
+    }
+
+    private boolean amIShadow() {
+        return amIShadow;
+    }
+
+    private void attemptToBecomeMaster() {
+        try {
+            Machine me = null; // TODO
+            this.zkClient.registerMasterServer(me);
+            becomeMaster();
+        } catch (ZnodeTakenException e) {
+            becomeShadow();
+        } catch (ZookeeperDownException e) {
+            // TODO: totally fail
+        }
+    }
+
+    private void becomeMaster() {
+        amIShadow = false;
+        storage.stopReplication();
+    }
+
+    private void becomeShadow() {
+        amIShadow = true;
+        storage.startReplication();
+    }
+
     @Override
     public Response process(Request request) throws TjfsException {
         return null;
     }
 
     public Response process(Request request, int threadID) throws TjfsException {
+        if (amIShadow()) {
+            throw new TjfsException("I'm not the real master");
+        }
         BaseLogger.info("Processing the request as master.");
         if (request == null)
             throw new TjfsException("Empty Request error.");
@@ -119,5 +167,15 @@ public class MasterServer implements IServer{
             response = new Response(MCode.ERROR, (new GetChunkResponseArgs(e.getMessage())), null, 0);
         }
         return response;
+    }
+
+    @Override
+    public void onMasterServerDown() {
+        if (amIShadow()) {
+            attemptToBecomeMaster();
+        } else {
+            // This means that you went down which is extremely weird
+            // Throw Runtime exception...
+        }
     }
 }

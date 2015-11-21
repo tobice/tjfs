@@ -1,10 +1,7 @@
 package edu.uno.cs.tjfs.master;
 
 import com.google.gson.Gson;
-import edu.uno.cs.tjfs.common.BaseLogger;
-import edu.uno.cs.tjfs.common.ChunkDescriptor;
-import edu.uno.cs.tjfs.common.FileDescriptor;
-import edu.uno.cs.tjfs.common.ILocalFsClient;
+import edu.uno.cs.tjfs.common.*;
 import org.apache.commons.io.IOUtils;
 import org.xadisk.bridge.proxies.interfaces.*;
 import org.xadisk.filesystem.exceptions.XAApplicationException;
@@ -21,6 +18,8 @@ public class MasterStorage implements IMasterStorage{
     private Map<String, ChunkDescriptor> chunks;
     private Path fileSystemPath;
     private ILocalFsClient localFsClient;
+    private IMasterClient masterClient;
+    private Thread replicationThread;
 
     public MasterStorage(Path path, ILocalFsClient localFsClient){
         this.localFsClient = localFsClient;
@@ -62,6 +61,34 @@ public class MasterStorage implements IMasterStorage{
             BaseLogger.error("Error while putting file in master.");
             BaseLogger.error("MasterStorage.putFile", e);
             throw e;
+        }
+    }
+
+    public void startReplication() {
+        replicationThread = new Thread(() -> {
+            try {
+                while (true) {
+                    // Wait first so that the actual master server boots up and registers.
+                    Thread.sleep(1000); // TODO: use a value from Config
+                    // TODO: use master client to load log from the actual master
+                    // TODO: ignore failures, just log them
+                }
+            } catch (InterruptedException e) {
+                // Do nothing, we stopped
+            }
+        });
+        replicationThread.start();
+    }
+
+    public void stopReplication()  {
+        try {
+            if (replicationThread != null) {
+                replicationThread.interrupt(); // interrupt it
+                replicationThread.join(); // wait until it finishes
+                replicationThread = null; // delete it
+            }
+        } catch (InterruptedException e) {
+            // Do nothing, we're probably crashing.
         }
     }
 

@@ -27,8 +27,8 @@ public class MasterClient implements IZookeeperClient.IMasterServerDownListener,
     }
 
     public void start() {
-        zkClient.setOnMasterServerUpListener(this);
-        zkClient.setOnMasterServerDownListener(this);
+        zkClient.addOnMasterServerUpListener(this);
+        zkClient.addOnMasterServerDownListener(this);
     }
 
     @Override
@@ -41,10 +41,18 @@ public class MasterClient implements IZookeeperClient.IMasterServerDownListener,
         masterServer = null;
     }
 
+    private Machine getMasterServer() throws TjfsException {
+        if (masterServer == null) {
+            throw new TjfsException("Master server is down!");
+        }
+
+        return masterServer;
+    }
+
     @Override
     public List<ChunkDescriptor> allocateChunks(int number) throws TjfsException {
         Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(number), null, 0);
-        Response response = this.messageClient.send(masterServer, request);
+        Response response = this.messageClient.send(getMasterServer(), request);
         if (response == null) {
             throw new TjfsException("No response from server.");
         } else if (response.code == MCode.ERROR) {
