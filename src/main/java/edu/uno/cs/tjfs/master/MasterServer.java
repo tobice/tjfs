@@ -1,13 +1,11 @@
 package edu.uno.cs.tjfs.master;
 
-import edu.uno.cs.tjfs.chunkserver.IServer;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.MCode;
 import edu.uno.cs.tjfs.common.messages.Request;
 import edu.uno.cs.tjfs.common.messages.Response;
 import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
-import edu.uno.cs.tjfs.common.zookeeper.ZnodeMissingException;
 import edu.uno.cs.tjfs.common.zookeeper.ZnodeTakenException;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperDownException;
 

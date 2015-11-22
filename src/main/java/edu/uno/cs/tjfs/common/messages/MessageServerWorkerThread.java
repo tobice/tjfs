@@ -1,10 +1,8 @@
-package edu.uno.cs.tjfs.chunkserver;
+package edu.uno.cs.tjfs.common.messages;
 
 import edu.uno.cs.tjfs.common.BaseLogger;
+import edu.uno.cs.tjfs.common.IServer;
 import edu.uno.cs.tjfs.common.MessageParser;
-import edu.uno.cs.tjfs.common.messages.MCode;
-import edu.uno.cs.tjfs.common.messages.Response;
-import edu.uno.cs.tjfs.common.messages.arguments.GetChunkResponseArgs;
 import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;

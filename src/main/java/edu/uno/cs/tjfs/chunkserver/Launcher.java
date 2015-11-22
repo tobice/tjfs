@@ -5,6 +5,7 @@ import edu.uno.cs.tjfs.common.ChunkClient;
 import edu.uno.cs.tjfs.common.DummyMasterClient;
 import edu.uno.cs.tjfs.common.LocalFsClient;
 import edu.uno.cs.tjfs.common.messages.MessageClient;
+import edu.uno.cs.tjfs.common.messages.MessageServer;
 
 import java.nio.file.Paths;
 
