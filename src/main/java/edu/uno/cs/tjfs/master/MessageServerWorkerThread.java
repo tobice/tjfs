@@ -31,7 +31,7 @@ class MessageServerWorkerThread extends Thread {
             OutputStream socketOutputStream = clientSocket.getOutputStream();
             try {
                 MessageParser parser = new MessageParser();
-                Response response = this.server.process(parser.fromStream(socketInputStream), this.clientID);
+                Response response = this.server.process(parser.fromStream(socketInputStream));
                 IOUtils.copy(parser.toStreamFromResponse(response), socketOutputStream);
             }catch(Exception e){
                 BaseLogger.error("MessageServer.start - " + e.getMessage());

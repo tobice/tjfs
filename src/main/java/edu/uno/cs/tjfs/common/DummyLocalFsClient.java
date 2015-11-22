@@ -46,4 +46,9 @@ public class DummyLocalFsClient implements ILocalFsClient {
     public String[] listFiles(Path path) {
         return new String[0];
     }
+
+    @Override
+    public void deleteFile(Path path) throws IOException {
+        //TODO: If required
+    }
 }

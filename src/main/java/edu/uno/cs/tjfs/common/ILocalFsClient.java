@@ -10,4 +10,6 @@ public interface ILocalFsClient {
     byte[] readBytesFromFile(Path path) throws IOException;
     void writeBytesToFile(Path path, byte[] data) throws IOException;
     String[] listFiles(Path path);
+
+    void deleteFile(Path path) throws IOException;
 }

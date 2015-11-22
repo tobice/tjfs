@@ -49,14 +49,18 @@ public class MessageParser {
 
     public InputStream toStreamFromRequest(Request request) throws BadRequestException{
         try {
+            BaseLogger.info("Converting Request to Stream");
             Gson gson = new Gson();
             String jsonMessage = gson.toJson(request.args);
+            BaseLogger.info("Json message is " + jsonMessage);
 
             //Create a message
             String message =
                     request.header.value +
                             String.format("%010d", jsonMessage.length()) +
                             String.format("%010d", request.dataLength) + jsonMessage;
+
+            BaseLogger.info("Total message is " + message);
 
             InputStream stream = IOUtils.toInputStream(message, StandardCharsets.UTF_8);
 
@@ -89,14 +93,16 @@ public class MessageParser {
             int rawLength = Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(stream, 10), "UTF-8"));
             BaseLogger.info("Raw length is " + rawLength);
 
-            String jsonMessage = IOUtils.toString(IOUtils.toByteArray(stream, argsLength), "UTF-8");
-            BaseLogger.info("Json message is " + jsonMessage);
+            String jsonMessage = "";
+            if (argsLength > 0) {
+                jsonMessage = IOUtils.toString(IOUtils.toByteArray(stream, argsLength), "UTF-8");
+                BaseLogger.info("Json message is " + jsonMessage);
+            }
 
             MCode code = MCode.of(header);
 
             Gson gson = new Gson();
-            IMessageArgs messageArgs = (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
-            if (messageArgs == null) throw new JsonSyntaxException("");
+            IMessageArgs messageArgs = jsonMessage.isEmpty() ? null : (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
             result = new Response(code, messageArgs, new ByteArrayInputStream(IOUtils.toByteArray(stream, rawLength)), rawLength);
 
         }catch(IOException e){
@@ -113,7 +119,7 @@ public class MessageParser {
     public InputStream toStreamFromResponse(Response response) throws BadResponseException{
         try {
             Gson gson = new Gson();
-            String jsonMessage = gson.toJson(response.args);
+            String jsonMessage = response.args == null ? "" : gson.toJson(response.args);
 
             //Create a message
             String message =

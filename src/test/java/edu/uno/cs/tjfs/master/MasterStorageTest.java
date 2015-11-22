@@ -40,7 +40,7 @@ public class MasterStorageTest {
         System.out.println("serializing fileDescriptor");
 
 
-        gsonBuilder.registerTypeAdapter()
+//        gsonBuilder.registerTypeAdapter()
 
         System.out.println(gson.toJson(fileDescriptor));
         System.out.print("Done");

@@ -49,4 +49,9 @@ public class LocalFsClient implements ILocalFsClient {
         }
         return fileNames.toArray(new String[fileNames.size()]);
     }
+
+    @Override
+    public void deleteFile(Path path) throws IOException {
+        Files.delete(path);
+    }
 }

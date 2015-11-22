@@ -64,6 +64,31 @@ public class MessageParserTest {
         parser.fromStream(stream);
     }
 
+
+    @Test
+    public void toStreamFromResponseTestingWithNullArgs() throws BadResponseException, IOException {
+        Response response = Response.Success();
+        MessageParser parser = new MessageParser();
+        InputStream result = parser.toStreamFromResponse(response);
+
+        assertTrue(IOUtils.toString(IOUtils.toByteArray(result, 2), "UTF-8").equals("90"));
+        assertTrue(Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(result, 10), "UTF-8")) == 0);
+        assertTrue(Integer.parseInt(IOUtils.toString(IOUtils.toByteArray(result, 10), "UTF-8")) == 0);
+        assertTrue(result.available() == 0);
+    }
+
+    @Test
+    public void toResponseFromStreamTestingWithNullArgs() throws BadResponseException, MessageParseException {
+        Response response = Response.Success();
+        MessageParser parser = new MessageParser();
+        InputStream result = parser.toStreamFromResponse(response);
+
+        Response response1 = parser.fromStreamToResponse(result, GetChunkRequestArgs.class);
+        assertTrue(response1.args == null);
+        assertTrue(response.code == MCode.SUCCESS);
+        assertTrue(response.dataLength == 0);
+    }
+
     @Test
     public void toStreamFromRequestTest() throws IOException, MessageParseException, BadRequestException{
         Gson gson = new Gson();

@@ -6,6 +6,8 @@ import edu.uno.cs.tjfs.common.DummyMasterClient;
 import edu.uno.cs.tjfs.common.LocalFsClient;
 import edu.uno.cs.tjfs.common.messages.MessageClient;
 
+import java.nio.file.Paths;
+
 public class Launcher {
     public static void main(String[] args){
         while(true) {
@@ -14,7 +16,7 @@ public class Launcher {
                 ChunkClient chunkClient = new ChunkClient(new MessageClient());
                 LocalFsClient localFsClient = new LocalFsClient();
 
-                ChunkServer chunkServer = new ChunkServer(localFsClient, masterClient, chunkClient);
+                ChunkServer chunkServer = new ChunkServer(localFsClient, masterClient, chunkClient, Paths.get("/home/srjanak/chunks"));
 
                 MessageServer server = new MessageServer(chunkServer);
 

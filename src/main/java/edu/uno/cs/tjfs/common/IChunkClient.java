@@ -1,9 +1,5 @@
 package edu.uno.cs.tjfs.common;
 
-import edu.uno.cs.tjfs.common.Machine;
-import edu.uno.cs.tjfs.common.TjfsException;
-
-import java.io.IOException;
 import java.io.InputStream;
 
 public interface IChunkClient {

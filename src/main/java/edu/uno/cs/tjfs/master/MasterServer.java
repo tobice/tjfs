@@ -71,7 +71,6 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         if (amIShadow()) {
             throw new TjfsException("I'm not the real master");
         }
-        BaseLogger.info("Processing the request as master.");
         if (request == null)
             throw new TjfsException("Empty Request error.");
         Response response;
