@@ -11,4 +11,9 @@ public class AllocateChunkResponseArgs implements IMessageArgs {
         this.status = status;
         this.chunks = chunks;
     }
+
+    public AllocateChunkResponseArgs(List<ChunkDescriptor> chunks){
+        this.chunks = chunks;
+        this.status = "";
+    }
 }

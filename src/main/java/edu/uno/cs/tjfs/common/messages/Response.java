@@ -29,4 +29,8 @@ public class Response extends Message{
     public static Response Success(byte[] data){
         return new Response(MCode.SUCCESS, null, new ByteArrayInputStream(data), data.length);
     }
+
+    public static Response Success(IMessageArgs args){
+        return new Response(MCode.SUCCESS, args, null, 0);
+    }
 }

@@ -15,15 +15,7 @@ public class ChunkClient implements IChunkClient {
     public InputStream get(Machine machine, String chunkName) throws TjfsException {
         Request request = new Request(MCommand.GET_CHUNK, new GetChunkRequestArgs(chunkName), null, 0);
         Response response = this.messageClient.send(machine, request);
-        if (response == null){
-            throw new TjfsException("No response from server.");
-        }
-        else if (response.code == MCode.ERROR){
-            throw new TjfsException(((GetChunkResponseArgs)response.args).status);
-        }
-        else{
-            return response.data;
-        }
+        return response.data;
     }
 
     @Override
@@ -42,10 +34,7 @@ public class ChunkClient implements IChunkClient {
 
     public void put(Machine machine, String chunkName, int dataLength, InputStream data) throws TjfsException{
         Request request = new Request(MCommand.PUT_CHUNK, new PutChunkRequestArgs(chunkName), data, dataLength);
-        Response response = this.messageClient.send(machine, request);
-        if (response.code == MCode.ERROR){
-            throw new TjfsException(((PutChunkResponseArgs)response.args).status);
-        }
+        this.messageClient.send(machine, request);
     }
 
     private void replicateAsync(Machine machineFrom, Machine machineTo, String chunkName) throws TjfsException{
@@ -78,20 +67,12 @@ public class ChunkClient implements IChunkClient {
 
     public void delete(Machine machine, String chunkName)  throws TjfsException{
         Request request = new Request(MCommand.DELETE_CHUNK, new DeleteChunkRequestArgs(chunkName), null, 0);
-        Response response = this.messageClient.send(machine, request);
-        if(response.code == MCode.ERROR){
-            throw new TjfsException(((DeleteChunkResponseArgs)response.args).status);
-        }
+        this.messageClient.send(machine, request);
     }
 
     public String[] list(Machine machine) throws TjfsException{
         Request request = new Request(MCommand.LIST_CHUNK, new ListChunkRequestArgs(), null, 0);
         Response response = this.messageClient.send(machine, request);
-        if(response.code == MCode.ERROR){
-            throw new TjfsException(((ListChunkResponseArgs)response.args).status);
-        }
-        else {
-            return ((ListChunkResponseArgs)response.args).chunks;
-        }
+        return ((ListChunkResponseArgs)response.args).chunks;
     }
 }

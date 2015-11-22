@@ -9,4 +9,8 @@ public class GetFileResponseArgs implements IMessageArgs {
         this.status = status;
         this.file = file;
     }
+    public GetFileResponseArgs(FileDescriptor file){
+        this.file = file;
+        this.status = "";
+    }
 }

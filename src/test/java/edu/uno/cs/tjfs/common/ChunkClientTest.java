@@ -59,7 +59,7 @@ public class ChunkClientTest {
         try {
             this.chunkClient.get(new ChunkDescriptor("0", new LinkedList<>(Arrays.asList(
                     testMachine1, testMachine2)), 3, 0));
-        }catch(TjfsException e) {
+        }catch(TjfsException | NullPointerException e) {
             verify(messageClient, atLeast(2)).send(machineCaptor.capture(), requestCaptor.capture());
             assertTrue(checkMachineEquality(machineCaptor.getAllValues().get(0), testMachine1));
             assertTrue(checkMachineEquality(machineCaptor.getAllValues().get(1), testMachine2));
@@ -79,7 +79,7 @@ public class ChunkClientTest {
                 new ChunkDescriptor("0", new LinkedList<>(Arrays.asList(testMachine1, testMachine2)));
         try {
             this.chunkClient.get(testChunkDescriptor);
-        }catch(TjfsException e) {
+        }catch(TjfsException | NullPointerException e) {
             verify(messageClient, atLeast(2)).send(machineCaptor.capture(), requestCaptor.capture());
             assertTrue(checkMachineEquality(machineCaptor.getAllValues().get(0), testMachine1));
             assertTrue(checkMachineEquality(machineCaptor.getAllValues().get(1), testMachine2));

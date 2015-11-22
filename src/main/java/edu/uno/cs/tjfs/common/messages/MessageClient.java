@@ -1,9 +1,12 @@
 package edu.uno.cs.tjfs.common.messages;
 
+import edu.uno.cs.tjfs.client.TjfsClient;
+import edu.uno.cs.tjfs.client.TjfsClientException;
 import edu.uno.cs.tjfs.common.BaseLogger;
 import edu.uno.cs.tjfs.common.Machine;
 import edu.uno.cs.tjfs.common.MessageParseException;
 import edu.uno.cs.tjfs.common.MessageParser;
+import edu.uno.cs.tjfs.common.messages.arguments.ErrorResponseArgs;
 import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;
@@ -14,7 +17,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 public class MessageClient implements IMessageClient {
-    public Response send(Machine machine, Request request) throws BadRequestException, BadResponseException, ConnectionFailureException{
+    public Response send(Machine machine, Request request) throws BadRequestException, BadResponseException, ConnectionFailureException, TjfsClientException {
         BaseLogger.info("MessageClient.send - Sending a message to " + machine.ip + " at " + machine.port);
         InetAddress address;
         Socket socket = null;
@@ -61,6 +64,13 @@ public class MessageClient implements IMessageClient {
 //                BaseLogger.error("MessageClient.send", e);
             }
         }
+
+        if (result == null)
+            throw new BadResponseException("No response from server", result);
+        if (result.code == MCode.ERROR){
+            throw new TjfsClientException(((ErrorResponseArgs)result.args).status);
+        }
+
         return result;
     }
 

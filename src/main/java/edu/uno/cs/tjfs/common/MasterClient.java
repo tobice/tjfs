@@ -4,6 +4,7 @@ import edu.uno.cs.tjfs.common.messages.*;
 import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 
+import javax.imageio.stream.MemoryCacheImageOutputStream;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -53,36 +54,26 @@ public class MasterClient implements IZookeeperClient.IMasterServerDownListener,
     public List<ChunkDescriptor> allocateChunks(int number) throws TjfsException {
         Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(number), null, 0);
         Response response = this.messageClient.send(getMasterServer(), request);
-        if (response == null) {
-            throw new TjfsException("No response from server.");
-        } else if (response.code == MCode.ERROR) {
-            throw new TjfsException(((AllocateChunkResponseArgs) response.args).status);
-        } else {
-            return ((AllocateChunkResponseArgs) response.args).chunks;
-        }
+        return ((AllocateChunkResponseArgs) response.args).chunks;
     }
 
     @Override
     public FileDescriptor getFile(Path path) throws TjfsException {
-        Request request = new Request(MCommand.ALLOCATE_CHUNKS, new GetFileRequestArgs(path), null, 0);
+        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(path), null, 0);
         Response response = this.messageClient.send(masterServer, request);
-        if (response == null) {
-            throw new TjfsException("No response from server.");
-        } else if (response.code == MCode.ERROR) {
-            throw new TjfsException(((GetFileResponseArgs) response.args).status);
-        } else {
-            return ((GetFileResponseArgs) response.args).file;
-        }
+        return ((GetFileResponseArgs) response.args).file;
     }
 
     @Override
     public void putFile(FileDescriptor file) throws TjfsException {
-        Request request = new Request(MCommand.ALLOCATE_CHUNKS, new PutFileRequestArgs(file), null, 0);
+        Request request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(file), null, 0);
+        this.messageClient.send(masterServer, request);
+    }
+
+    @Override
+    public List<FileDescriptor> getLog(int logID) throws TjfsException{
+        Request request = new Request(MCommand.GET_LOG, new GetLogRequestArgs(logID));
         Response response = this.messageClient.send(masterServer, request);
-        if (response == null) {
-            throw new TjfsException("No response from server.");
-        } else if (response.code == MCode.ERROR) {
-            throw new TjfsException(((PutFileResponseArgs) response.args).status);
-        }
+        return ((GetLogResponseArgs)response.args).logs;
     }
 }
