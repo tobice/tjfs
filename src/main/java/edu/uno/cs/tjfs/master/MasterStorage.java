@@ -27,7 +27,8 @@ public class MasterStorage implements IMasterStorage{
 
     @Override
     public FileDescriptor getFile(Path path){
-        return chunkServerService.updateChunkServers(this.fileSystem.get(path));
+        FileDescriptor fileDescriptor = this.fileSystem.get(path);
+        return fileDescriptor == null ? new FileDescriptor(path) : chunkServerService.updateChunkServers(this.fileSystem.get(path));
     }
 
     public synchronized void putFile(Path path, FileDescriptor file) throws IOException{

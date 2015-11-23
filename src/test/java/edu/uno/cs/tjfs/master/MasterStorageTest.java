@@ -1,12 +1,11 @@
 package edu.uno.cs.tjfs.master;
 
 import com.google.gson.*;
-import edu.uno.cs.tjfs.common.ChunkDescriptor;
-import edu.uno.cs.tjfs.common.FileDescriptor;
-import edu.uno.cs.tjfs.common.LocalFsClient;
-import edu.uno.cs.tjfs.common.Machine;
+import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -21,39 +20,45 @@ public class MasterStorageTest {
 
     private MasterStorage masterStorage;
 
+    @Mock
+    private IZookeeperClient zookeeperClient;
+
+    @Mock
+    private IChunkClient chunkClient;
+
     @Before
     public void setUp() throws IOException {
 
-        ChunkDescriptor chunkDescriptor = new ChunkDescriptor("someChunk", new ArrayList<Machine>());
-        Gson gson = new Gson();
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        System.out.println("serializing chunkS");
-        System.out.println(gson.toJson(chunkDescriptor));
-        System.out.print("Done");
+//        ChunkDescriptor chunkDescriptor = new ChunkDescriptor("someChunk", new ArrayList<Machine>());
+//        Gson gson = new Gson();
+//        GsonBuilder gsonBuilder = new GsonBuilder();
+//        System.out.println("serializing chunkS");
+//        System.out.println(gson.toJson(chunkDescriptor));
+//        System.out.print("Done");
+//
+//        ArrayList<ChunkDescriptor> chunks = new ArrayList<>();
+//        chunks.add(chunkDescriptor);
+//        chunks.add(chunkDescriptor);
+//
+//        FileDescriptor fileDescriptor = new FileDescriptor(Paths.get(""), new Date(), chunks);
+//
+//        System.out.println("serializing fileDescriptor");
+//
+//
+////        gsonBuilder.registerTypeAdapter()
+//
+//        System.out.println(gson.toJson(fileDescriptor));
+//        System.out.print("Done");
+        masterStorage = new MasterStorage(Paths.get("fs"), new LocalFsClient(), new ChunkServerService(zookeeperClient, chunkClient));
 
-        ArrayList<ChunkDescriptor> chunks = new ArrayList<>();
-        chunks.add(chunkDescriptor);
-        chunks.add(chunkDescriptor);
-
-        FileDescriptor fileDescriptor = new FileDescriptor(Paths.get(""), new Date(), chunks);
-
-        System.out.println("serializing fileDescriptor");
-
-
-//        gsonBuilder.registerTypeAdapter()
-
-        System.out.println(gson.toJson(fileDescriptor));
-        System.out.print("Done");
-
-
-        masterStorage = new MasterStorage(Paths.get("fs"), new LocalFsClient());
         masterStorage.init();
     }
 
     @Test
     public void  getFileTest() throws IOException{
-        FileDescriptor fileDescriptor = masterStorage.getFile(Paths.get(""));
-        assertTrue(fileDescriptor == null);
+        Path testPath = Paths.get("/home/testpath");
+        FileDescriptor fileDescriptor = masterStorage.getFile(testPath);
+        assertTrue(fileDescriptor.path.equals(testPath));
 
         ChunkDescriptor chunkDescriptor = new ChunkDescriptor("someChunk", new ArrayList<Machine>());
         Path path = Paths.get("/some/file/path");
