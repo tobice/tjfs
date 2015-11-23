@@ -17,17 +17,17 @@ public class MasterStorage implements IMasterStorage{
     private IMasterClient masterClient;
     private Thread replicationThread;
     private int logFileCount;
+    private ChunkServerService chunkServerService;
 
-    public MasterStorage(Path path, ILocalFsClient localFsClient){
+    public MasterStorage(Path path, ILocalFsClient localFsClient, ChunkServerService service){
         this.localFsClient = localFsClient;
         this.fileSystemPath = path;
+        this.chunkServerService = service;
     }
 
     @Override
     public FileDescriptor getFile(Path path){
-        FileDescriptor descriptor = this.fileSystem.get(path);
-
-        return descriptor;
+        return chunkServerService.updateChunkServers(this.fileSystem.get(path));
     }
 
     public synchronized void putFile(Path path, FileDescriptor file) throws IOException{

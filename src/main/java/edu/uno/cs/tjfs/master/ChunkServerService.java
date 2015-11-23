@@ -115,9 +115,12 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
 
     public FileDescriptor updateChunkServers(FileDescriptor fileDescriptor) {
         // TODO: maybe create new FileDescriptor since it's immutable
+        ArrayList<ChunkDescriptor> updatedChunkMappings = new ArrayList<>();
         for (ChunkDescriptor chunk : fileDescriptor.chunks) {
-            // update chunk.chunkServers based on current mappings
+            ChunkDescriptor updatedDescriptor = this.chunks.stream().filter(x->x.name.equals(chunk.name)).findFirst().orElse(null);
+            if (updatedDescriptor == null) new TjfsException("Invalid chunks in the file");
+            updatedChunkMappings.add(updatedDescriptor);
         }
-        return null;
+        return new FileDescriptor(fileDescriptor.path, fileDescriptor.time, updatedChunkMappings);
     }
 }

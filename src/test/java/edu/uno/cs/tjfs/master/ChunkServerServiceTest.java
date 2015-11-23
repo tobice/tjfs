@@ -1,8 +1,6 @@
 package edu.uno.cs.tjfs.master;
 
-import edu.uno.cs.tjfs.common.IChunkClient;
-import edu.uno.cs.tjfs.common.Machine;
-import edu.uno.cs.tjfs.common.TjfsException;
+import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import org.junit.Before;
 import org.junit.Rule;
@@ -11,13 +9,13 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
-
-import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Date;
 
 import static junit.framework.Assert.assertNotSame;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -140,5 +138,52 @@ public class ChunkServerServiceTest {
         assertEquals(chunkServerService.chunks.get(0).chunkServers.size(), 2);
         assertEquals(chunkServerService.chunks.get(6).chunkServers.size(), 2);
         assertEquals(chunkServerService.chunks.get(9).chunkServers.size(), 1);
+    }
+
+    @Test
+    public void updateChunkServerTest() throws TjfsException {
+        //I need at least three chunk servers to run this test
+        //Running the test in an opposite of what we did in the previous tests
+        assertEquals(this.chunkServerService.chunkServers.size(), 0);
+
+        Machine machine = new Machine("some ip", 5555);
+        String[] listOfChunkNames = { "Hello", "World", "I", "Have", "These", "Chunks" };
+        when(chunkClient.list(machine)).thenReturn(listOfChunkNames);
+
+        Machine machine2 = new Machine("some ip 2", 5555);
+        String[] listOfChunkNames2 = { "Hello", "World", "I", "Have", "These", "Chunks", "Also", "new", "Chunkies" };
+        when(chunkClient.list(machine2)).thenReturn(listOfChunkNames2);
+
+        Machine machine3 = new Machine("some ip 3", 5555);
+        String[] listOfChunkNames3 = { "Hello", "World", "I", "Have", "These", "Chunks", "Also", "new", "Chunkies", "new one" };
+        when(chunkClient.list(machine3)).thenReturn(listOfChunkNames3);
+
+        this.chunkServerService.onChunkServerUp(machine);
+        this.chunkServerService.onChunkServerUp(machine2);
+        this.chunkServerService.onChunkServerUp(machine3);
+
+        //Initially chunk hello is in nowhere
+        ChunkDescriptor chunkDescriptor = new ChunkDescriptor("Hello", null);
+        ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>() {{
+            add(chunkDescriptor);
+        }};
+        FileDescriptor file = new FileDescriptor(Paths.get(""), new Date(), chunks);
+
+        file = this.chunkServerService.updateChunkServers(file);
+        assertEquals(file.chunks.get(0).chunkServers.size(), 3);
+
+        //Testing with two initial servers
+        //Initially chunk hello is in nowhere
+        ChunkDescriptor chunkDescriptor2 = new ChunkDescriptor("Hello", new ArrayList<Machine>(){{
+            add(machine);
+            add(machine2);
+        }});
+        chunks = new ArrayList<ChunkDescriptor>() {{
+            add(chunkDescriptor2);
+        }};
+        file = new FileDescriptor(Paths.get(""), new Date(), chunks);
+        assertEquals(file.chunks.get(0).chunkServers.size(), 2);
+        file = this.chunkServerService.updateChunkServers(file);
+        assertEquals(file.chunks.get(0).chunkServers.size(), 3);
     }
 }
