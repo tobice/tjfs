@@ -74,6 +74,12 @@ public class ChunkServer implements IServer {
         return Response.Success();
     }
 
+    private Response processReplicateChunkSync(ReplicateChunkRequestArgs args) throws IOException, TjfsException{
+        byte[] data = this.localFsClient.readBytesFromFile(getChunkPath(args.chunkName));
+        this.chunkClient.put(args.machine, args.chunkName, data.length, new ByteArrayInputStream(data));
+        return Response.Success();
+    }
+
     private Path getChunkPath(String chunkName){
         return Paths.get(fileSystem.toString() + "/" + chunkName);
     }

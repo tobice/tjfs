@@ -5,6 +5,7 @@ public class Config {
     protected int executorPoolSize = 3;
     protected int executorQueueSize = 3;
     protected int pipeBufferSize = 3 * chunkSize;
+    protected int masterReplicationIntervalTime = 10000;
 
     public int getExecutorQueueSize() {
         return executorQueueSize;
@@ -21,4 +22,6 @@ public class Config {
     public int getPipeBufferSize() {
         return pipeBufferSize;
     }
+
+    public int getMasterReplicationIntervalTime() { return masterReplicationIntervalTime; }
 }

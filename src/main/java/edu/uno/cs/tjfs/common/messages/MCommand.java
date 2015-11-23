@@ -14,7 +14,8 @@ public enum MCommand {
     GET_FILE("06", GetFileRequestArgs.class, GetFileResponseArgs.class),
     PUT_FILE("07", PutFileRequestArgs.class, PutFileResponseArgs.class),
     ALLOCATE_CHUNKS("08", AllocateChunksRequestArgs.class, AllocateChunkResponseArgs.class),
-    GET_LOG("09", GetLogRequestArgs.class, GetLogResponseArgs.class);
+    GET_LOG("09", GetLogRequestArgs.class, GetLogResponseArgs.class),
+    REPLICATE_CHUNK_SYNC("10", ReplicateChunkRequestArgs.class, ErrorResponseArgs.class);
 
     public String value;
     public Class requestClass;

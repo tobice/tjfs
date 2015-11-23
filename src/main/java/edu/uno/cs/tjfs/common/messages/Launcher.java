@@ -28,10 +28,10 @@ public class Launcher {
             machines.add(machine);
             machines.add(machine2);
 
-            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("1", machines, data.length, 1);
+            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("2", machines, data.length, 1);
 
 
-            //chunkClient.put(chunkDescriptor, data.length, new ByteArrayInputStream(data));
+            chunkClient.put(chunkDescriptor, data.length, new ByteArrayInputStream(data));
             String test = IOUtils.toString(IOUtils.toByteArray(chunkClient.get(chunkDescriptor)), "UTF-8");
             System.out.println("file is " + test);
         }catch(Exception e){

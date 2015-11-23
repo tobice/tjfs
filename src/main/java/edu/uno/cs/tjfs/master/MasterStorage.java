@@ -1,6 +1,7 @@
 package edu.uno.cs.tjfs.master;
 
 import com.google.gson.Gson;
+import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import org.apache.commons.io.IOUtils;
 
@@ -25,6 +26,7 @@ public class MasterStorage implements IMasterStorage{
     @Override
     public FileDescriptor getFile(Path path){
         FileDescriptor descriptor = this.fileSystem.get(path);
+
         return descriptor;
     }
 
@@ -43,13 +45,21 @@ public class MasterStorage implements IMasterStorage{
     }
 
     public void startReplication() {
+        Config config = new Config();
+        int intervalTime = config.getMasterReplicationIntervalTime();
         replicationThread = new Thread(() -> {
             try {
                 while (true) {
                     // Wait first so that the actual master server boots up and registers.
-                    Thread.sleep(1000); // TODO: use a value from Config
-                    // TODO: use master client to load log from the actual master
-                    // TODO: ignore failures, just log them
+                    Thread.sleep(intervalTime);
+                    try {
+                        List<FileDescriptor> logFiles = this.masterClient.getLog(this.logFileCount);
+                        updateLog(logFiles);
+                    } catch (Exception e) {
+                        BaseLogger.error("MasterStorage.startReplication - Error while getting the logs from the master");
+                        BaseLogger.error("MasterStorage.startReplication - ", e);
+                    }
+
                 }
             } catch (InterruptedException e) {
                 // Do nothing, we stopped
@@ -67,6 +77,12 @@ public class MasterStorage implements IMasterStorage{
             }
         } catch (InterruptedException e) {
             // Do nothing, we're probably crashing.
+        }
+    }
+
+    private synchronized void updateLog(List<FileDescriptor> logs) throws IOException {
+        for (FileDescriptor log : logs){
+            putFile(log.path, log);
         }
     }
 
@@ -90,11 +106,6 @@ public class MasterStorage implements IMasterStorage{
             BaseLogger.error("MaterStorage.getLog - ", e);
         }
         return result;
-    }
-
-    @Override
-    public void allocateChunks(List<ChunkDescriptor> chunks) {
-        //TODO: what to do?
     }
 
     @Override

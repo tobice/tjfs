@@ -1,30 +1,27 @@
 package edu.uno.cs.tjfs.master;
 
-import edu.uno.cs.tjfs.common.ChunkClient;
-import edu.uno.cs.tjfs.common.ChunkDescriptor;
-import edu.uno.cs.tjfs.common.FileDescriptor;
-import edu.uno.cs.tjfs.common.Machine;
+import edu.uno.cs.tjfs.chunkserver.ChunkServer;
+import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperDownException;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class ChunkServerService implements IZookeeperClient.IChunkServerUpListener,
         IZookeeperClient.IChunkServerDownListener {
     IZookeeperClient zkClient;
-    ChunkClient chunkClient;
-
+    IChunkClient chunkClient;
     List<Machine> chunkServers;
-
     /** The up-to-date chunk descriptors with running chunk servers */
     List<ChunkDescriptor> chunks;
 
-    public ChunkServerService(IZookeeperClient zkClient) {
+    public ChunkServerService(IZookeeperClient zkClient, IChunkClient chunkClient) {
         this.zkClient = zkClient;
+        this.chunkClient = chunkClient;
+        this.chunkServers = new ArrayList<>();
+        this.chunks = new ArrayList<>();
     }
 
     public void start() throws ZookeeperDownException {
@@ -32,29 +29,69 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         zkClient.addOnChunkServerUpListener(this);
         chunkServers = zkClient.getChunkServers();
 
-        // TODO: for each chunk server, get chunks and add them to mappings
+        // For each chunk server, get chunks and add them to mappings
+        for(Machine machine : chunkServers){
+            try {
+                updateChunkMappingsFromMachine(machine);
+            } catch (TjfsException e) {
+                BaseLogger.error("ChunkServerService.start - ", e);
+            }
+        }
     }
 
     @Override
-    public void onChunkServeDown(Machine machine) {
+    public void onChunkServerDown(Machine machine) {
         chunkServers.remove(machine);
-
-        for (ChunkDescriptor chunk : chunks) {
+        //This is going to go through all the chunks not just the ones on that machine
+        List<ChunkDescriptor> tempChunks = chunks.stream().filter(x->x.chunkServers.contains(machine)).collect(Collectors.toList());
+        for (ChunkDescriptor chunk : tempChunks) {
             chunk.chunkServers.remove(machine);
-
             if (chunk.chunkServers.size() < 2) {
-                // TODO: do the replication
+                try {
+                    //Get a new machine to replicate to
+                    Machine machineToReplicateTo = getRandomChunkServerNotEqualTo(chunk.chunkServers.get(0));
+                    //Replicate synchronously
+                    this.chunkClient.replicateSync(
+                            chunk.chunkServers.get(0),
+                            machineToReplicateTo,
+                            chunk.name);
+                    //After the chunk is replicated to that server..add it to the chunkservers list of chunks
+                    chunk.chunkServers.add(machineToReplicateTo);
+                } catch (TjfsException e) {
+                    BaseLogger.error("ChunkServerService.onChunkServerDown - Cannot Run the Chunk Replication");
+                    BaseLogger.error("ChunkServerService.onChunkServerDown - ", e);
+                }
             }
         }
-
-        // TODO: init chunk replication
+        // TODO: init chunk replication??
     }
 
     @Override
     public void onChunkServerUp(Machine machine) {
-        chunkServers.add(machine);
+        if (!chunkServers.contains(machine)) chunkServers.add(machine);
+        try {
+            updateChunkMappingsFromMachine(machine);
+        }catch(Exception e){
+            BaseLogger.error("ChunkServerService.onChunkServerUp - Cannot get chunks.");
+            BaseLogger.error("ChunkServerService.onChunkServerUp - ", e);
+        }
+    }
 
-        // TODO: load chunks from chunk server and add it to mappings
+    private void updateChunkMappingsFromMachine(Machine machine) throws TjfsException {
+        String[] listOfChunks = this.chunkClient.list(machine);
+        for(String chunkName : listOfChunks){
+            ChunkDescriptor chunkDescriptor = this.chunks.stream().filter(x->x.name.equals(chunkName)).findFirst().orElse(null);
+            if (chunkDescriptor != null && !chunkDescriptor.chunkServers.contains(machine)){
+                chunkDescriptor.chunkServers.add(machine);
+
+                this.chunks.set(this.chunks.indexOf(chunkDescriptor), chunkDescriptor);
+            }
+            else if (chunkDescriptor == null){
+                ArrayList<Machine> machines = new ArrayList<>();
+                machines.add(machine);
+                this.chunks.add(new ChunkDescriptor(chunkName, machines));
+            }
+        }
     }
 
     public List<Machine> getChunkServers() {
@@ -64,6 +101,16 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
     public List<Machine> getRandomChunkServers(int number) {
         Collections.shuffle(chunkServers);
         return new LinkedList<>(chunkServers.subList(0, number));
+    }
+
+    public Machine getRandomChunkServerNotEqualTo(Machine machine) {
+        Collections.shuffle(chunkServers);
+        Machine returnMachine = chunkServers.subList(0, 1).get(0);
+        while (returnMachine.equals(machine)) {
+            Collections.shuffle(chunkServers);
+            returnMachine = chunkServers.subList(0, 1).get(0);
+        }
+        return returnMachine;
     }
 
     public FileDescriptor updateChunkServers(FileDescriptor fileDescriptor) {

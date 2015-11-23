@@ -12,7 +12,7 @@ public interface IZookeeperClient {
         void onChunkServerUp(Machine machine);
     }
     interface IChunkServerDownListener {
-        void onChunkServeDown(Machine machine);
+        void onChunkServerDown(Machine machine);
     }
     interface IMasterServerUpListener {
         void onMasterServerUp(Machine machine);

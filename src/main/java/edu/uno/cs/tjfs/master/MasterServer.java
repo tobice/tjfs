@@ -10,6 +10,7 @@ import edu.uno.cs.tjfs.common.zookeeper.ZookeeperDownException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class MasterServer implements IServer, IZookeeperClient.IMasterServerDownListener {
@@ -73,6 +74,8 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
                     return getFile((GetFileRequestArgs) request.args);
                 case PUT_FILE:
                     return putFile((PutFileRequestArgs) request.args);
+                case GET_LOG:
+                    return getLog((GetLogRequestArgs) request.args);
                 default:
                     throw new TjfsException("Invalid Header");
             }
@@ -98,6 +101,11 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     private Response putFile(PutFileRequestArgs args) throws IOException {
         this.storage.putFile(args.file.path, args.file);
         return Response.Success();
+    }
+
+    private Response getLog(GetLogRequestArgs args) throws IOException {
+        List<FileDescriptor> result = storage.getLog(args.logID);
+        return Response.Success(new GetLogResponseArgs(result));
     }
 
     @Override

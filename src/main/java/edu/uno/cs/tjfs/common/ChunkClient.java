@@ -37,9 +37,16 @@ public class ChunkClient implements IChunkClient {
         this.messageClient.send(machine, request);
     }
 
-    private void replicateAsync(Machine machineFrom, Machine machineTo, String chunkName) throws TjfsException{
+    @Override
+    public void replicateAsync(Machine machineFrom, Machine machineTo, String chunkName) throws TjfsException{
         Request request = new Request(MCommand.REPLICATE_CHUNK, new ReplicateChunkRequestArgs(chunkName, machineTo), null, 0);
         this.messageClient.sendAsync(machineFrom, request);
+    }
+
+    @Override
+    public void replicateSync(Machine machineFrom, Machine machineTo, String chunkName) throws TjfsException{
+        Request request = new Request(MCommand.REPLICATE_CHUNK_SYNC, new ReplicateChunkRequestArgs(chunkName, machineTo), null, 0);
+        this.messageClient.send(machineFrom, request);
     }
 
     public void putAsync(Machine machine, String chunkName, int dataLength, InputStream data) throws TjfsException{
