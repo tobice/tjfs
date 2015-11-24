@@ -14,8 +14,8 @@ public class MasterClient implements IZookeeperClient.IMasterServerDownListener,
     }
 
     public void start() {
-        zkClient.setOnMasterServerUpListener(this);
-        zkClient.setOnMasterServerDownListener(this);
+        zkClient.addOnMasterServerUpListener(this);
+        zkClient.addOnMasterServerDownListener(this);
     }
 
     @Override
