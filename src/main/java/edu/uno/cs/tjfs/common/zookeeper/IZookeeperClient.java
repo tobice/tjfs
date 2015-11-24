@@ -24,7 +24,7 @@ public interface IZookeeperClient {
         void onChunkServerUp(Machine machine);
     }
     interface IChunkServerDownListener {
-        void onChunkServeDown(Machine machine);
+        void onChunkServerDown(Machine machine);
     }
     interface IMasterServerUpListener {
         void onMasterServerUp(Machine machine);
@@ -32,26 +32,36 @@ public interface IZookeeperClient {
     interface IMasterServerDownListener {
         void onMasterServerDown();
     }
+    interface IConnectionLostListener {
+        void onConnectionLost();
+    }
 
     void addOnChunkServerUpListener(IChunkServerUpListener listener);
     void addOnChunkServerDownListener(IChunkServerDownListener listener);
     void addOnMasterServerUpListener(IMasterServerUpListener listener);
     void addOnMasterServerDownListener(IMasterServerDownListener listener);
+    void addOnConnectionLostListener(IConnectionLostListener listener);
 
     /**
      * Get current master server.
+     *
+     * This method is really fast as it returns a local value that
+     * is being synchronized with Zookeeper via event system.
+     *
      * @return current master's IP and port
      * @throws ZookeeperException.NoMasterRegisteredException if no master is registered with Zookeeper
-     * @throws ZookeeperException general Zookeeper failure
      */
-    Machine getMasterServer() throws ZookeeperException;
+    Machine getMasterServer() throws ZookeeperException.NoMasterRegisteredException;
 
     /**
      * Get list of chunk servers.
+     *
+     * This method is really fast as it returns a local value that
+     * is being synchronized with Zookeeper via event system.
+     *
      * @return list of chunk server currently registered with Zookeeper
-     * @throws ZookeeperException general Zookeeper failure
      */
-    List<Machine> getChunkServers() throws ZookeeperException;
+    List<Machine> getChunkServers();
 
     /**
      * Register machine as new master.

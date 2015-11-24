@@ -1,22 +1,33 @@
 package edu.uno.cs.tjfs.common.zookeeper;
 
 import edu.uno.cs.tjfs.common.Machine;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.log4j.Level;
+import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.log4j.Logger;
 
 import static edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient.LockType.*;
 
+/**
+ * ZookeeperClient implementation. Provides API for remote operations like locking files,
+ * registering chunk servers and electing new master server.
+ *
+ * The client maintains an up-to-date list of currently active chunk servers and the currently
+ * elected master server. The synchronization is achieved via Zookeeper event system. The result
+ * is that using the client to get current master or the chunk servers is really fast as local
+ * values are used and no remote calls are made. The event system should guarantee that the local
+ * values are reasonably "fresh".
+ */
 public class ZookeeperClient implements IZookeeperClient {
+
     /** Base znodes in the Zookeepers file structure */
     enum Znode {
         /** Znode where the master is registered */
@@ -39,6 +50,8 @@ public class ZookeeperClient implements IZookeeperClient {
         }
     }
 
+    final static Logger logger = Logger.getLogger(ZookeeperClient.class);
+
     /** Actual active Zookeeper client instance */
     protected final ZooKeeper zk;
 
@@ -51,6 +64,19 @@ public class ZookeeperClient implements IZookeeperClient {
      */
     protected final Map<String, String> currentLocks = new HashMap<>();
 
+    /** List of currently registered chunk servers. Synchronized with Zookeeper */
+    protected List<Machine> chunkServers = new LinkedList<>();
+
+    /** Currently registered master server. Synchronized with Zookeeper */
+    protected Machine masterServer;
+
+    // Event listeners
+    List<IChunkServerUpListener> chunkServerUpListeners = new LinkedList<>();
+    List<IChunkServerDownListener> chunkServerDownListeners = new LinkedList<>();
+    List<IMasterServerUpListener> masterServerUpListeners = new LinkedList<>();
+    List<IMasterServerDownListener> masterServerDownListeners = new LinkedList<>();
+    List<IConnectionLostListener> connectionLostListeners = new LinkedList<>();
+
     protected ZookeeperClient(ZooKeeper zk, DataMonitor dataMonitor) {
         this.zk = zk;
         this.dataMonitor = dataMonitor;
@@ -59,7 +85,7 @@ public class ZookeeperClient implements IZookeeperClient {
     /** Start the client, initialize the base structure and start watching for changes */
     public void start() throws ZookeeperException {
         setupStructure();
-        // TODO: start watchers
+        setupWatches();
     }
 
 
@@ -67,49 +93,57 @@ public class ZookeeperClient implements IZookeeperClient {
 
     @Override
     public void addOnChunkServerUpListener(IChunkServerUpListener listener) {
-
+        chunkServerUpListeners.add(listener);
     }
 
     @Override
     public void addOnChunkServerDownListener(IChunkServerDownListener listener) {
-
+        chunkServerDownListeners.add(listener);
     }
 
     @Override
     public void addOnMasterServerUpListener(IMasterServerUpListener listener) {
-
+        masterServerUpListeners.add(listener);
     }
 
     @Override
     public void addOnMasterServerDownListener(IMasterServerDownListener listener) {
+        masterServerDownListeners.add(listener);
+    }
 
+    @Override
+    public void addOnConnectionLostListener(IConnectionLostListener listener) {
+        connectionLostListeners.add(listener);
     }
 
     /**
      * Get current master server.
+     *
+     * This method is really fast as it returns a local value that
+     * is being synchronized with Zookeeper via event system.
+     *
      * @return current master's IP and port
      * @throws ZookeeperException.NoMasterRegisteredException if no master is registered with Zookeeper
-     * @throws ZookeeperException general Zookeeper failure
      */
     @Override
-    public Machine getMasterServer() throws ZookeeperException {
-        List<String> children = getChildren(Znode.MASTER.toString(), false);
-        if (children.size() == 0) {
+    public Machine getMasterServer() throws ZookeeperException.NoMasterRegisteredException {
+        if (masterServer == null) {
             throw new ZookeeperException.NoMasterRegisteredException();
         }
-        return Machine.fromBytes(getData(Znode.MASTER.toString() + "/" + children.get(0), false));
+        return masterServer;
     }
 
     /**
      * Get list of chunk servers.
+     *
+     * This method is really fast as it returns a local value that
+     * is being synchronized with Zookeeper via event system.
+     *
      * @return list of chunk server currently registered with Zookeeper
-     * @throws ZookeeperException general Zookeeper failure
      */
     @Override
-    public List<Machine> getChunkServers() throws ZookeeperException {
-        return getChildren(Znode.CHUNKSERVERS.toString(), false).stream()
-            .map(Machine::fromString)
-            .collect(Collectors.toList());
+    public List<Machine> getChunkServers() {
+        return chunkServers;
     }
 
     /**
@@ -180,6 +214,117 @@ public class ZookeeperClient implements IZookeeperClient {
     public void releaseFileLock(Path path, LockType lockType) throws ZookeeperException {
         String zkPath = makeZkPath(path);
         releaseLock(zkPath, lockType);
+    }
+
+
+    // Watcher stuff
+
+    /**
+     * Initialize the state without firing any events and establish the watches
+     * @throws ZookeeperException
+     */
+    protected void setupWatches() throws ZookeeperException {
+        updateChunkServers(false);
+        updateMasterServer(false);
+    }
+
+    /**
+     * Process a watched event coming from Zookeeper
+     * @param event watched event that happened in Zookeeper
+     */
+    public synchronized void process(WatchedEvent event) {
+        String path = event.getPath();
+        if (event.getType() == Watcher.Event.EventType.None) {
+            // We are are being told that the state of the
+            // connection has changed
+            switch (event.getState()) {
+                case Disconnected:
+                case Expired:
+                    // It's all over.
+                    connectionLostListeners.forEach(IConnectionLostListener::onConnectionLost);
+                    break;
+            }
+        } else {
+            try {
+                if (path != null) {
+                    if (path.equals(Znode.MASTER.toString())) {
+                        updateMasterServer(true);
+                    } else if (path.equals(Znode.CHUNKSERVERS.toString())) {
+                        updateChunkServers(true);
+                    } else {
+                        logger.info("Zookeeper event dispatched for unknown node " + path);
+                    }
+                }
+            } catch (ZookeeperException e) {
+                logger.error("Failed while handling Zookeeper event", e);
+            }
+        }
+    }
+
+    /**
+     * Synchronize with Zookeeper the list of active chunk servers.
+     * @param fireTriggers whether listeners should be notified of possible changes
+     * @throws ZookeeperException
+     */
+    protected void updateChunkServers(boolean fireTriggers) throws ZookeeperException {
+        // Get list of current chunk servers and reset the watch.
+        List<Machine> updated = getChildren(Znode.CHUNKSERVERS.toString(), true).stream()
+            .map(Machine::fromString)
+            .collect(Collectors.toList());
+
+        if (fireTriggers) {
+            // Detect chunk servers that have been removed (are down)
+            for (Machine machine : subtract(chunkServers, updated)) {
+                logger.info("Chunk server " + machine + " is down");
+                for (IChunkServerDownListener listener : chunkServerDownListeners) {
+                    listener.onChunkServerDown(machine);
+                }
+            }
+
+            // Detect chunk server that have been added (are up)
+            for (Machine machine : subtract(updated, chunkServers)) {
+                logger.info("Chunk server " + machine + " is up");
+                for (IChunkServerUpListener listener : chunkServerUpListeners) {
+                    listener.onChunkServerUp(machine);
+                }
+            }
+        }
+
+        chunkServers = updated;
+    }
+
+    /**
+     * Synchronize with Zookeeper currently registered master server.
+     * @param fireTriggers whether listeners should be notified of possible changes
+     * @throws ZookeeperException
+     */
+    protected void updateMasterServer(boolean fireTriggers) throws ZookeeperException {
+        // Get the current master server and reset the watch
+        List<String> children = getChildren(Znode.MASTER.toString(), true);
+        Machine updated;
+        if (children.size() == 0) {
+            updated = null;
+        } else {
+            updated = Machine.fromBytes(getData(Znode.MASTER.toString() + "/" + children.get(0), false));
+        }
+
+        if (fireTriggers) {
+            // Detect if a new master server was registered (is up)
+            if (updated != null) {
+                if (!updated.equals(masterServer)) {
+                    logger.info("Master server " + updated + " is up");
+                    for (IMasterServerUpListener listener : masterServerUpListeners) {
+                        listener.onMasterServerUp(updated);
+                    }
+                }
+            // Detect if the old master server was removed (is down)
+            } else if (masterServer != null) {
+                logger.info("Master server " + masterServer + " is down");
+                masterServerDownListeners.forEach(IMasterServerDownListener::onMasterServerDown);
+            }
+        }
+
+        masterServer = updated;
     }
 
 
@@ -395,7 +540,7 @@ public class ZookeeperClient implements IZookeeperClient {
      * @param node name of the node
      * @return counter value or zero if the format is incorrect.
      */
-    protected  static int getCounter(String node) {
+    protected static int getCounter(String node) {
         try {
             if (node.length() < 10) {
                 return 0;
@@ -404,6 +549,18 @@ public class ZookeeperClient implements IZookeeperClient {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    /**
+     * Subtract list b from the list a. (1, 2, 3) - (2, 3) = (1)
+     * @param a original list
+     * @param b list that we want to subtract from a
+     * @return result of the subtraction
+     */
+    protected static <E> List<E> subtract(List<E> a, List<E> b) {
+        List<E> copy = new LinkedList<>(a);
+        copy.removeAll(b);
+        return copy;
     }
 
 
@@ -418,9 +575,13 @@ public class ZookeeperClient implements IZookeeperClient {
      */
     public static ZookeeperClient connect(Machine machine, int sessionTimeout) throws ZookeeperException {
         try {
+            // Disable excessive logging of Zookeeper
+            Logger.getLogger("org.apache.zookeeper").setLevel(Level.WARN);
+
             DataMonitor dataMonitor = new DataMonitor();
             ZooKeeper zk = new ZooKeeper(machine.toString(), sessionTimeout, dataMonitor);
             ZookeeperClient zkClient = new ZookeeperClient(zk, dataMonitor);
+            dataMonitor.setZkClient(zkClient);
             zkClient.start();
             return zkClient;
         } catch (IOException e) {

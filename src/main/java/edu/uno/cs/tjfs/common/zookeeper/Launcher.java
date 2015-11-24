@@ -15,13 +15,51 @@ public class Launcher {
         zkClient.registerChunkServer(new Machine("127.0.0.1", 8000));
         zkClient.registerChunkServer(new Machine("127.0.0.2", 8000));
         zkClient.getChunkServers().forEach(System.out::println);
+        zkClient.acquireFileLock(Paths.get("/ubuntu.iso"), READ);
         */
 
-        zkClient.acquireFileLock(Paths.get("/ubuntu.iso"), READ);
+        Listener listener = new Listener();
+        zkClient.addOnChunkServerDownListener(listener);
+        zkClient.addOnChunkServerUpListener(listener);
+        zkClient.addOnMasterServerDownListener(listener);
+        zkClient.addOnMasterServerUpListener(listener);
+        zkClient.addOnConnectionLostListener(listener);
 
-
+        int i = 1;
         while (true) {
             Thread.sleep(1000);
+            // zkClient.registerChunkServer(Machine.fromString("127.0.0.1:" + i++));
+        }
+    }
+
+    static class Listener implements IZookeeperClient.IChunkServerUpListener, IZookeeperClient
+            .IChunkServerDownListener, IZookeeperClient.IMasterServerUpListener, IZookeeperClient
+            .IMasterServerDownListener, IZookeeperClient.IConnectionLostListener {
+
+        @Override
+        public void onChunkServerDown(Machine machine) {
+            System.out.println("chunk server down " + machine);
+        }
+
+        @Override
+        public void onChunkServerUp(Machine machine) {
+            System.out.println("chunk server up " + machine);
+        }
+
+        @Override
+        public void onMasterServerDown() {
+            System.out.println("master down");
+        }
+
+        @Override
+        public void onMasterServerUp(Machine machine) {
+            System.out.println("master up " + machine);
+
+        }
+
+        @Override
+        public void onConnectionLost() {
+            System.out.println("connection lost!");
         }
     }
 }
