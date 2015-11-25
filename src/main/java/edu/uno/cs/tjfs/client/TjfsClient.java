@@ -3,7 +3,10 @@ package edu.uno.cs.tjfs.client;
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.FileDescriptor;
+import edu.uno.cs.tjfs.common.messages.MessageClient;
 import edu.uno.cs.tjfs.common.threads.JobExecutor;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperClient;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -142,5 +145,14 @@ public class TjfsClient implements ITjfsClient {
     @Override
     public void move(Path sourcePath, Path destinationPath) throws TjfsClientException {
 
+    }
+
+    /** Initialize instance of TjfsClient */
+    public static TjfsClient getInstance(Config config, Machine zookeeper) throws ZookeeperException {
+        ZookeeperClient zkClient = ZookeeperClient.connect(zookeeper, config.getZookeeperSessionTimeout());
+        MessageClient messageClient = new MessageClient();
+        ChunkClient chunkClient = new ChunkClient(messageClient);
+        MasterClient masterClient = new MasterClient(messageClient, zkClient);
+        return new TjfsClient(config, masterClient, chunkClient);
     }
 }

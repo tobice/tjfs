@@ -1,6 +1,9 @@
 package edu.uno.cs.tjfs.client;
 
+import edu.uno.cs.tjfs.Config;
+import edu.uno.cs.tjfs.common.Machine;
 import edu.uno.cs.tjfs.common.TjfsException;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 import org.apache.commons.cli.*;
 import org.apache.commons.io.FileUtils;
 
@@ -199,5 +202,11 @@ public class CommandLineClient {
         }
 
         workingDirectory = path;
+    }
+
+    /** Initialize instance of command line client */
+    public static CommandLineClient getInstance(Config config, Machine zookeeper, PrintStream log) throws ZookeeperException {
+        Client client = Client.getInstance(config, zookeeper);
+        return new CommandLineClient(client, log);
     }
 }

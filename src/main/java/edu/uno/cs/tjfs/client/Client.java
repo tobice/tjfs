@@ -1,6 +1,11 @@
 package edu.uno.cs.tjfs.client;
 
+import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.ILocalFsClient;
+import edu.uno.cs.tjfs.common.LocalFsClient;
+import edu.uno.cs.tjfs.common.Machine;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperClient;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -128,5 +133,12 @@ public class Client implements IClient {
      */
     public void move(Path source, Path destination) throws TjfsClientException {
         tjfsClient.move(source, destination);
+    }
+
+    /** Initialize instance of the client */
+    public static Client getInstance(Config config, Machine zookeeper) throws ZookeeperException {
+        TjfsClient tjfsClient = TjfsClient.getInstance(config, zookeeper);
+        LocalFsClient localFsClient = new LocalFsClient();
+        return new Client(tjfsClient, localFsClient);
     }
 }
