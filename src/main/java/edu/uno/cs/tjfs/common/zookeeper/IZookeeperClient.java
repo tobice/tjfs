@@ -6,13 +6,25 @@ import java.nio.file.Path;
 import java.util.List;
 
 public interface IZookeeperClient {
-    enum LockType { READ, WRITE }
+    enum LockType {
+        READ("read"), WRITE("write"), MACHINE("machine");
+        protected String value;
+
+        LockType(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
 
     interface IChunkServerUpListener {
         void onChunkServerUp(Machine machine);
     }
     interface IChunkServerDownListener {
-        void onChunkServeDown(Machine machine);
+        void onChunkServerDown(Machine machine);
     }
     interface IMasterServerUpListener {
         void onMasterServerUp(Machine machine);
@@ -20,57 +32,67 @@ public interface IZookeeperClient {
     interface IMasterServerDownListener {
         void onMasterServerDown();
     }
+    interface IConnectionLostListener {
+        void onConnectionLost();
+    }
 
-    void setOnChunkServerUpListener(IChunkServerUpListener listener);
-    void setOnChunkServerDownListener(IChunkServerDownListener listener);
-    void setOnMasterServerUpListener(IMasterServerUpListener listener);
-    void setOnMasterServerDownListener(IMasterServerDownListener listener);
+    void addOnChunkServerUpListener(IChunkServerUpListener listener);
+    void addOnChunkServerDownListener(IChunkServerDownListener listener);
+    void addOnMasterServerUpListener(IMasterServerUpListener listener);
+    void addOnMasterServerDownListener(IMasterServerDownListener listener);
+    void addOnConnectionLostListener(IConnectionLostListener listener);
 
     /**
      * Get current master server.
+     *
+     * This method is really fast as it returns a local value that
+     * is being synchronized with Zookeeper via event system.
+     *
      * @return current master's IP and port
-     * @throws ZnodeMissingException if no master is registered with Zookeeper
-     * @throws ZookeeperDownException if the connection with Zookeeper has been broken
+     * @throws ZookeeperException.NoMasterRegisteredException if no master is registered with Zookeeper
      */
-    Machine getMasterServer() throws ZnodeMissingException, ZookeeperDownException;
+    Machine getMasterServer() throws ZookeeperException.NoMasterRegisteredException;
 
     /**
      * Get list of chunk servers.
+     *
+     * This method is really fast as it returns a local value that
+     * is being synchronized with Zookeeper via event system.
+     *
      * @return list of chunk server currently registered with Zookeeper
-     * @throws ZookeeperDownException if the connection with Zookeeper has been broken
      */
-    List<Machine> getChunkServers() throws ZookeeperDownException;
+    List<Machine> getChunkServers();
 
     /**
      * Register machine as new master.
      * @param machine that should be registered as new master
-     * @throws ZnodeTakenException if there is already a master registered
-     * @throws ZookeeperDownException if the connection with Zookeeper has been broken
+     * @throws ZookeeperException.MasterAlreadyExistsException if there is already a master registered
+     * @throws ZookeeperException general Zookeeper failure
      */
-    void registerMasterServer(Machine machine) throws ZnodeTakenException, ZookeeperDownException;
+    void registerMasterServer(Machine machine) throws ZookeeperException;
 
     /**
      * Register machine as a new chunk server
      * @param machine that should be registered as a new chunk server
-     * @throws ZnodeTakenException if there is already the same chunk server registered
-     * @throws ZookeeperDownException if the connection with Zookeeper has been broken
+     * @throws ZookeeperException.ChunkServerExistsException if there is already the same chunk server registered
+     * @throws ZookeeperException general Zookeeper failure
      */
-    void registerChunkServer(Machine machine) throws ZnodeTakenException, ZookeeperDownException;
+    void registerChunkServer(Machine machine) throws ZookeeperException;
 
     /**
      * Acquire lock for given file.
      * @param path to the file that should be locked
      * @param lockType type of lock, either READ or WRITE
-     * @throws ZnodeTakenException if the file is already locked
-     * @throws ZookeeperDownException if the connection with Zookeeper has been broken
+     * @throws ZookeeperException.FileLockedException if the file is already locked
+     * @throws ZookeeperException general Zookeeper failure
      */
-    void acquireFileLock(Path path, LockType lockType) throws ZnodeTakenException, ZookeeperDownException;
+    void acquireFileLock(Path path, LockType lockType) throws ZookeeperException;
 
     /**
      * Release lock from given file.
      * @param path to the file whose lock should be removed
      * @param lockType type of lock, either READ or WRITE
-     * @throws ZookeeperDownException if the connection with Zookeeper has been broken
+     * @throws ZookeeperException general Zookeeper failure
      */
-    void releaseFileLock(Path path, LockType lockType) throws ZookeeperDownException;
+    void releaseFileLock(Path path, LockType lockType) throws ZookeeperException;
 }
