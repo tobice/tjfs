@@ -1,10 +1,18 @@
 package edu.uno.cs.tjfs.common;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedList;
 
 import static org.junit.Assert.*;
@@ -43,5 +51,18 @@ public class FileDescriptorTest {
 
         file = new FileDescriptor(Paths.get("random_file"), null, new ArrayList<>());
         assertThat(file.getSize(), equalTo(0));
+    }
+
+    @Test
+    public void testSerializeToJson() {
+        FileDescriptor file = new FileDescriptor(Paths.get("/random/file"), new Date(),
+            new ArrayList<>(Arrays.asList(
+                new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
+                new ChunkDescriptor("0", new LinkedList<>(), 3, 1),
+                new ChunkDescriptor("0", new LinkedList<>(), 2, 2))));
+
+        Gson gson = CustomGson.create();
+        FileDescriptor otherFile = gson.fromJson(gson.toJson(file), FileDescriptor.class);
+        assertThat(file, equalTo(otherFile));
     }
 }
