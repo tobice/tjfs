@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 public class MasterStorageTest {
 
@@ -33,11 +34,15 @@ public class MasterStorageTest {
     @Mock
     private IChunkClient chunkClient;
 
+    @Mock
+    private IMasterClient masterClient;
+
     @Before
     public void setUp() throws IOException {
+        initMocks(this);
         LocalFsClient localFsClient = new LocalFsClient();
         ChunkServerService csServerice = new ChunkServerService(zookeeperClient, chunkClient);
-        masterStorage = new MasterStorage(Paths.get("fs/test"), localFsClient, csServerice);
+        masterStorage = new MasterStorage(Paths.get("fs/test"), localFsClient, csServerice, masterClient);
         masterStorage.init();
     }
 

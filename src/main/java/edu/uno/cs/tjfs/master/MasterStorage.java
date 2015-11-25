@@ -20,10 +20,11 @@ public class MasterStorage implements IMasterStorage{
     private int logFileCount;
     private ChunkServerService chunkServerService;
 
-    public MasterStorage(Path path, ILocalFsClient localFsClient, ChunkServerService service){
+    public MasterStorage(Path path, ILocalFsClient localFsClient, ChunkServerService service, IMasterClient masterClient){
         this.localFsClient = localFsClient;
         this.fileSystemPath = path;
         this.chunkServerService = service;
+        this.masterClient = masterClient;
     }
 
     public void startReplication() {
