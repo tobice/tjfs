@@ -45,6 +45,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         } catch (ZnodeTakenException e) {
             becomeShadow();
         } catch (ZookeeperDownException e) {
+            //throw e; -> This requires api change
             // TODO: totally fail
         }
     }
@@ -113,8 +114,8 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         if (amIShadow()) {
             attemptToBecomeMaster();
         } else {
-            // This means that you went down which is extremely weird
-            // Throw Runtime exception...
+            BaseLogger.error("MasterServer.onMasterServerDown - listening to its own down event.");
+            //throw new TjfsException("Master server listens to its own going down event.");
         }
     }
 }
