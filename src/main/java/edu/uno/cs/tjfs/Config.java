@@ -6,6 +6,7 @@ public class Config {
     protected int executorQueueSize = 3;
     protected int pipeBufferSize = 3 * chunkSize;
     protected int zookeeperSessionTimeout = 1000;
+    protected int masterReplicationIntervalTime = 10000;
 
     public int getExecutorQueueSize() {
         return executorQueueSize;
@@ -26,4 +27,6 @@ public class Config {
     public int getZookeeperSessionTimeout() {
         return zookeeperSessionTimeout;
     }
+
+    public int getMasterReplicationIntervalTime() { return masterReplicationIntervalTime; }
 }

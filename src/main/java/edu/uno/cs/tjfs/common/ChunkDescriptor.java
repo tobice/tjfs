@@ -32,4 +32,17 @@ public class ChunkDescriptor {
     public ChunkDescriptor withSizeAndNumber(int size, int number) {
         return new ChunkDescriptor(this.name, this.chunkServers, size, number);
     }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof ChunkDescriptor)) {
+            return false;
+        }
+        ChunkDescriptor otherChunk = (ChunkDescriptor) object;
+        return
+            // Ignore machines, they are volatile.
+            name.equals(otherChunk.name) &&
+            size == otherChunk.size &&
+            index == otherChunk.index;
+    }
 }

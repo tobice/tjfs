@@ -1,13 +1,9 @@
-package edu.uno.cs.tjfs.chunkserver;
+package edu.uno.cs.tjfs.common.messages;
 
 import edu.uno.cs.tjfs.common.BaseLogger;
-import edu.uno.cs.tjfs.common.MessageParser;
-import edu.uno.cs.tjfs.common.messages.Response;
-import org.apache.commons.io.IOUtils;
+import edu.uno.cs.tjfs.common.IServer;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -24,26 +20,10 @@ public class MessageServer {
             BaseLogger.info("MessageServer.start - ChunkServer Started and listening to the port " + port);
             while(true)
             {
-                //Reading the message from the client
                 Socket clientSocket = serverSocket.accept();
-//                InputStream socketInputStream = socket.getInputStream();
-//                OutputStream socketOutputStream = socket.getOutputStream();
-//                try {
-//                    MessageParser parser = new MessageParser();
-//                    Response response = this.server.process(parser.fromStream(socketInputStream));
-//                    IOUtils.copy(parser.toStreamFromResponse(response), socketOutputStream);
-//                }catch(Exception e){
-//                    BaseLogger.error("MessageServer.start - " + e.getMessage());
-//                    BaseLogger.error(e.getStackTrace().toString());
-//                }
-//                socketOutputStream.flush();
-
                 MessageServerWorkerThread cliThread = new MessageServerWorkerThread
                         (this.server, clientSocket, id++);
                 cliThread.start();
-
-                //socketInputStream.close();
-                //socketOutputStream.close();
             }
         }
         catch (Exception e)

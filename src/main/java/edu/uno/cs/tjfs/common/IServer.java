@@ -1,6 +1,5 @@
-package edu.uno.cs.tjfs.chunkserver;
+package edu.uno.cs.tjfs.common;
 
-import edu.uno.cs.tjfs.common.TjfsException;
 import edu.uno.cs.tjfs.common.messages.Request;
 import edu.uno.cs.tjfs.common.messages.Response;
 

@@ -10,7 +10,12 @@ public enum MCommand {
     PUT_CHUNK("02", PutChunkRequestArgs.class, PutChunkResponseArgs.class),
     DELETE_CHUNK("03", DeleteChunkRequestArgs.class, DeleteChunkResponseArgs.class),
     LIST_CHUNK("04", ListChunkRequestArgs.class, DeleteChunkResponseArgs.class),
-    REPLICATE_CHUNK("05", ReplicateChunkRequestArgs.class, null);
+    REPLICATE_CHUNK("05", ReplicateChunkRequestArgs.class, null),
+    GET_FILE("06", GetFileRequestArgs.class, GetFileResponseArgs.class),
+    PUT_FILE("07", PutFileRequestArgs.class, PutFileResponseArgs.class),
+    ALLOCATE_CHUNKS("08", AllocateChunksRequestArgs.class, AllocateChunkResponseArgs.class),
+    GET_LOG("09", GetLogRequestArgs.class, GetLogResponseArgs.class),
+    REPLICATE_CHUNK_SYNC("10", ReplicateChunkRequestArgs.class, ErrorResponseArgs.class);
 
     public String value;
     public Class requestClass;

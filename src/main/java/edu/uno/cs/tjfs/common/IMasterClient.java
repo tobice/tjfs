@@ -29,4 +29,12 @@ public interface IMasterClient {
      * @throws TjfsException
      */
     void putFile(FileDescriptor file) throws TjfsException;
+
+    /**
+     * Gets the log for the shadow master from the actual master
+     * @param logID the last log id to start from
+     * @return list of file descriptors from the log of the actual master
+     * @throws TjfsException
+     */
+    List<FileDescriptor> getLog(int logID) throws TjfsException;
 }

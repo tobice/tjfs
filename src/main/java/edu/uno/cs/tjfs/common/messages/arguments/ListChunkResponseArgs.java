@@ -8,4 +8,8 @@ public class ListChunkResponseArgs implements IMessageArgs{
         this.chunks = chunks;
         this.status = status;
     }
+    public ListChunkResponseArgs(String[] chunks){
+        this.chunks = chunks;
+        this.status = "";
+    }
 }

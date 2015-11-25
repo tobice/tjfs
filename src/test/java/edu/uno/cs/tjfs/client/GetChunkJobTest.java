@@ -34,8 +34,8 @@ public class GetChunkJobTest {
     public void setUp() throws Exception {
         initMocks(this);
         chunk1 = new ChunkDescriptor("0", new LinkedList<>());
-        chunk2 = new ChunkDescriptor("0", new LinkedList<>());
-        chunk3 = new ChunkDescriptor("0", new LinkedList<>());
+        chunk2 = new ChunkDescriptor("1", new LinkedList<>());
+        chunk3 = new ChunkDescriptor("2", new LinkedList<>());
         outputStream = new ByteArrayOutputStream();
     }
 

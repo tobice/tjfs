@@ -19,21 +19,21 @@ public class Launcher {
 
             LocalFsClient localFsClient = new LocalFsClient();
 
-            byte[] data = localFsClient.readBytesFromFile(Paths.get("1"));
+            byte[] data = localFsClient.readBytesFromFile(Paths.get("/home/srjanak/testFSFiles/1"));
 
-            Machine machine = new Machine("192.168.43.27", 6002);
-            Machine machine2 = new Machine("192.168.43.218", 6002);
+            Machine machine = new Machine("127.0.0.1", 6002);
+            Machine machine2 = new Machine("127.0.0.1", 6002);
 
             LinkedList<Machine> machines = new LinkedList<>();
             machines.add(machine);
             machines.add(machine2);
 
-            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("0", machines, data.length, 1);
+            ChunkDescriptor chunkDescriptor = new ChunkDescriptor("2", machines, data.length, 1);
 
+
+            chunkClient.put(chunkDescriptor, data.length, new ByteArrayInputStream(data));
             String test = IOUtils.toString(IOUtils.toByteArray(chunkClient.get(chunkDescriptor)), "UTF-8");
             System.out.println("file is " + test);
-
-            //chunkClient.put(chunkDescriptor, data.length, new ByteArrayInputStream(data));
         }catch(Exception e){
             System.out.println("Error is " + e.getMessage());
         }

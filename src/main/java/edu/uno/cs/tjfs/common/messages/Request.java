@@ -13,4 +13,11 @@ public class Request extends Message {
         this.data = data;
         this.dataLength = dataLength;
     }
+
+    public Request(MCommand header, IMessageArgs args){
+        this.header = header;
+        this.args = args;
+        this.data = null;
+        this.dataLength = 0;
+    }
 }

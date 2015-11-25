@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.common.messages;
 
+import edu.uno.cs.tjfs.client.TjfsClientException;
 import edu.uno.cs.tjfs.common.Machine;
 import edu.uno.cs.tjfs.common.messages.arguments.GetChunkRequestArgs;
 import org.junit.Rule;
@@ -11,7 +12,7 @@ public class MessageClientTest {
     public final ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void sendTest() throws BadRequestException, BadResponseException, ConnectionFailureException{
+    public void sendTest() throws BadRequestException, BadResponseException, ConnectionFailureException, TjfsClientException{
         //There is no such machine
         Machine machine = new Machine("", 0);
         Request request = new Request(MCommand.GET_CHUNK, new GetChunkRequestArgs("someChunk"), null, 0);

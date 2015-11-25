@@ -44,6 +44,11 @@ public class DummyMasterClient implements IMasterClient {
         files.put(file.path, file);
     }
 
+    @Override
+    public List<FileDescriptor> getLog(int logID) throws TjfsException {
+        return null;
+    }
+
     private List<Machine> getRandomChunkServers(int number) {
         Collections.shuffle(chunkServers);
         return new LinkedList<>(chunkServers.subList(0, number));

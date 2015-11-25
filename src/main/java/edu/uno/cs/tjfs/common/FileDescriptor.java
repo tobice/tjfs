@@ -12,7 +12,7 @@ public class FileDescriptor {
     public final Date time;
 
     /** List of chunks that the file consists of */
-    protected final ArrayList<ChunkDescriptor> chunks;
+    public final ArrayList<ChunkDescriptor> chunks;
 
     public FileDescriptor(Path path, Date time, ArrayList<ChunkDescriptor> chunks) {
         this.path = path;
@@ -69,5 +69,17 @@ public class FileDescriptor {
      */
     public boolean isEmpty() {
         return getSize() == 0;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof FileDescriptor)) {
+            return false;
+        }
+        FileDescriptor otherFile = (FileDescriptor) object;
+        return
+            path.equals(otherFile.path) &&
+            time.toString().equals(otherFile.time.toString()) &&
+            chunks.equals(otherFile.chunks);
     }
 }
