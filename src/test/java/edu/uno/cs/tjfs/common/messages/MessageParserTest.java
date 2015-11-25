@@ -2,6 +2,7 @@ package edu.uno.cs.tjfs.common.messages;
 
 import com.google.gson.Gson;
 
+import edu.uno.cs.tjfs.common.CustomGson;
 import edu.uno.cs.tjfs.common.MessageParser;
 import edu.uno.cs.tjfs.common.MessageParseException;
 import edu.uno.cs.tjfs.common.messages.arguments.GetChunkRequestArgs;
@@ -26,7 +27,7 @@ public class MessageParserTest {
 
     @Test
     public void fromStreamToRequestTest() throws Exception {
-        Gson gson = new Gson();
+        Gson gson = CustomGson.create();
         GetChunkRequestArgs args = new GetChunkRequestArgs("testChunk");
         String jsonMessage = gson.toJson(args);
 
@@ -91,7 +92,7 @@ public class MessageParserTest {
 
     @Test
     public void toStreamFromRequestTest() throws IOException, MessageParseException, BadRequestException{
-        Gson gson = new Gson();
+        Gson gson = CustomGson.create();
         GetChunkRequestArgs argsMessage = new GetChunkRequestArgs("testChunk");
         String jsonMessage = gson.toJson(argsMessage);
 
@@ -125,7 +126,7 @@ public class MessageParserTest {
     @Test
     public void fromStreamToResponse() throws Exception {
         //Create Response stream first
-        Gson gson = new Gson();
+        Gson gson = CustomGson.create();
         GetChunkResponseArgs args = new GetChunkResponseArgs("");
         String jsonMessage = gson.toJson(args);
 
@@ -167,7 +168,7 @@ public class MessageParserTest {
 
     @Test
     public void toStreamFromResponse() throws IOException, MessageParseException, BadResponseException{
-        Gson gson = new Gson();
+        Gson gson = CustomGson.create();
         GetChunkResponseArgs argsMessage = new GetChunkResponseArgs("");
         String jsonMessage = gson.toJson(argsMessage);
 

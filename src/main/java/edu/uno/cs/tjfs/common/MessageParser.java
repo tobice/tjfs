@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class MessageParser {
-    final static Logger logger = Logger.getLogger(MessageParser.class);
     public Request fromStream (InputStream stream) throws MessageParseException, IOException{
         Request result;
         try {
@@ -33,7 +32,7 @@ public class MessageParser {
             MCommand command;
             command = MCommand.of(header);
 
-            Gson gson = new Gson();
+            Gson gson = CustomGson.create();
             IMessageArgs messageArgs = (IMessageArgs) gson.fromJson(jsonMessage, command.requestClass);
             if (messageArgs == null) throw new JsonSyntaxException("");
             result = new Request(command, messageArgs, stream, rawLength);
@@ -50,7 +49,7 @@ public class MessageParser {
     public InputStream toStreamFromRequest(Request request) throws BadRequestException{
         try {
             BaseLogger.info("Converting Request to Stream");
-            Gson gson = new Gson();
+            Gson gson = CustomGson.create();
             String jsonMessage = gson.toJson(request.args);
             BaseLogger.info("Json message is " + jsonMessage);
 
@@ -101,7 +100,7 @@ public class MessageParser {
 
             MCode code = MCode.of(header);
 
-            Gson gson = new Gson();
+            Gson gson = CustomGson.create();
             IMessageArgs messageArgs = jsonMessage.isEmpty() ? null : (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
             result = new Response(code, messageArgs, new ByteArrayInputStream(IOUtils.toByteArray(stream, rawLength)), rawLength);
 
@@ -118,7 +117,7 @@ public class MessageParser {
 
     public InputStream toStreamFromResponse(Response response) throws BadResponseException{
         try {
-            Gson gson = new Gson();
+            Gson gson = CustomGson.create();
             String jsonMessage = response.args == null ? "" : gson.toJson(response.args);
 
             //Create a message
