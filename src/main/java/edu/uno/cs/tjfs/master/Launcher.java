@@ -20,7 +20,7 @@ public class Launcher {
         MasterStorage masterStorage = new MasterStorage(
                 config.getMasterStoragePath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
 
-        MasterServer masterServer = new MasterServer(masterStorage, chunkServerService, zClient);
+        MasterServer masterServer = new MasterServer(masterStorage, chunkServerService, zClient, config);
         masterServer.start();
     }
 }

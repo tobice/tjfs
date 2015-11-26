@@ -50,19 +50,13 @@ public class MasterServerTest {
         config = new Config();
         chunkServerService = new ChunkServerService(zookeeperClient, chunkClient);
         MasterStorage masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
-        this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient);
-    }
-
-    @Test
-    public void getIPTest() throws TjfsException, UnknownHostException {
-        String result = this.masterServer.getCurrentIPAddress();
-        assertTrue(!result.isEmpty());
+        this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient, config);
     }
 
     @Test
     public void startTest() throws TjfsException {
         //should try to register as the client
-        Machine machine = new Machine(this.masterServer.getCurrentIPAddress(), 6002);
+        Machine machine = new Machine(config.getCurrentIPAddress(), config.getMasterPort());
         this.masterServer.start();
         verify(zookeeperClient).registerMasterServer(machine);
     }
@@ -71,9 +65,16 @@ public class MasterServerTest {
     public void startReplicationTest() throws TjfsException, InterruptedException {
         when(this.masterClient.getLog(0)).thenReturn(new ArrayList<>());
         this.masterServer.becomeShadow();
-        //Give it some time so that the replication actually starts
-        Thread.sleep(config.getMasterReplicationIntervalTime() + 1000);
-        verify(masterClient).getLog(0);
+        Thread replicationThread = new Thread(() -> {
+            try {
+                //Give it some time so that the replication actually starts
+                Thread.sleep(config.getMasterReplicationIntervalTime() + 1000);
+                verify(masterClient).getLog(0);
+            }catch(Exception e){
+                //do nothing
+            }
+        });
+        replicationThread.start();
     }
 
     @Test
