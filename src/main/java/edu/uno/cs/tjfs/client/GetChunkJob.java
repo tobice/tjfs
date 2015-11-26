@@ -6,6 +6,7 @@ import edu.uno.cs.tjfs.common.IChunkClient;
 import edu.uno.cs.tjfs.common.TjfsException;
 import edu.uno.cs.tjfs.common.threads.WaitingJob;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,6 +17,8 @@ import java.io.OutputStream;
  * achieve that the data is written in a correct order.
  */
 public class GetChunkJob extends WaitingJob {
+    final static Logger logger = Logger.getLogger(GetChunkJob.class);
+
     /** Chunk client to access chunk servers */
     protected final IChunkClient chunkClient;
 
@@ -48,7 +51,7 @@ public class GetChunkJob extends WaitingJob {
     @Override
     public void runWithWaiting() {
         try {
-            BaseLogger.debug("Starting a new GetChunkJob for the chunk " + chunk.name);
+            logger.info("Getting a chunk " + chunk.name);
             byte[] data = IOUtils.toByteArray(chunkClient.get(chunk));
 
             // If the previous job is not finished yet, let's wait for it.
@@ -56,13 +59,13 @@ public class GetChunkJob extends WaitingJob {
 
             // Write the stuff to the output stream.
             outputStream.write(data, byteOffset, length);
-            BaseLogger.debug("GetChunkJob finished, the chunk " + chunk.name + " was written");
+            logger.info("The chunk " + chunk.name + " was received and written to the output");
 
             if (closeStream) {
                 outputStream.close();
             }
         } catch (TjfsException|IOException e) {
-            BaseLogger.error("GetChunkJob for the chunk " + chunk.name + " failed", e);
+            logger.error("Getting chunk " + chunk.name + " failed", e);
             notifyFailure(new TjfsException("Get chunk job failed. Reason: " + e.getMessage(), e));
         } catch (IndexOutOfBoundsException e) {
             notifyFailure(new TjfsException("Get chunk job failed. Too little incoming data", e));

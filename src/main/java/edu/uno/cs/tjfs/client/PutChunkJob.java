@@ -14,7 +14,7 @@ import java.io.InputStream;
  * chunk, merge with the new chunk and push the final data to a chunk server.
  */
 public class PutChunkJob extends Job {
-    // final static Logger logger = Logger.getLogger(PutChunkJob.class);
+    final static Logger logger = Logger.getLogger(PutChunkJob.class);
 
     /** Chunk client to access chunk servers */
     protected final IChunkClient chunkClient;
@@ -54,7 +54,7 @@ public class PutChunkJob extends Job {
     @Override
     public void run() {
         try {
-            // logger.info("Starting a new job to push the chunk " + chunk.name);
+            logger.info("Putting a new chunk " + chunk.name);
 
             // If there is an original chunk that should be updated, we have to get it and then
             // overwrite it / update it with new data.
@@ -69,6 +69,7 @@ public class PutChunkJob extends Job {
             // Push the chunk (and try to replicate it)
             InputStream stream = new ByteArrayInputStream(content);
             chunkClient.put(chunk, content.length, stream);
+            logger.info("The chunk " + chunk.name + " was written");
 
             // Update the file descriptor. We need to create new descriptor containing the
             // updated length and the index. FileDescriptor#replaceChunk is synchronized so we
@@ -76,6 +77,7 @@ public class PutChunkJob extends Job {
             // different chunk index which means that in theory, no conflicts should happen).
             file.replaceChunk(chunk.withSizeAndNumber(content.length, index));
         } catch (TjfsException|IOException e) {
+            logger.error("Putting the chunk " + chunk.name + " failed", e);
             notifyFailure(new TjfsException("Put chunk job failed. Reason: " + e.getMessage(), e));
         }
     }
