@@ -7,6 +7,7 @@ import edu.uno.cs.tjfs.common.messages.Response;
 import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     private IZookeeperClient zkClient;
     private Config config;
     private boolean amIShadow = true;
+    final static Logger logger = Logger.getLogger(MasterServer.class);
 
     public MasterServer(MasterStorage storage, ChunkServerService chunkServerService,
                         IZookeeperClient zkClient, Config config) {
@@ -123,7 +125,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         if (amIShadow()) {
             attemptToBecomeMaster();
         } else {
-            BaseLogger.error("MasterServer.onMasterServerDown - listening to its own down event.");
+            logger.error("MasterServer.onMasterServerDown - listening to its own down event.");
         }
     }
 }

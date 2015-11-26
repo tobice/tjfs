@@ -4,6 +4,7 @@ import edu.uno.cs.tjfs.chunkserver.ChunkServer;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
+import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
     IChunkClient chunkClient;
     /** The up-to-date chunk descriptors with running chunk servers */
     Map<String, ChunkDescriptor> chunks;
+    final static Logger logger = BaseLogger.getLogger(ChunkServerService.class);
 
     public ChunkServerService(IZookeeperClient zkClient, IChunkClient chunkClient) {
         this.zkClient = zkClient;
@@ -30,7 +32,7 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
             try {
                 updateChunkMappingsFromMachine(machine);
             } catch (TjfsException e) {
-                BaseLogger.error("ChunkServerService.start - ", e);
+                logger.error("ChunkServerService.start - ", e);
             }
         }
     }
@@ -65,8 +67,8 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
                             chunk.name);
                     chunk.chunkServers.add(machineToReplicateTo);
                 } catch (TjfsException e) {
-                    BaseLogger.error("ChunkServerService.onChunkServerDown - Cannot Run the Chunk Replication");
-                    BaseLogger.error("ChunkServerService.onChunkServerDown - ", e);
+                    logger.error("ChunkServerService.onChunkServerDown - Cannot Run the Chunk Replication");
+                    logger.error("ChunkServerService.onChunkServerDown - ", e);
                 }
             }
         }
@@ -78,8 +80,8 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         try {
             updateChunkMappingsFromMachine(machine);
         }catch(Exception e){
-            BaseLogger.error("ChunkServerService.onChunkServerUp - Cannot get chunks.");
-            BaseLogger.error("ChunkServerService.onChunkServerUp - ", e);
+            logger.error("ChunkServerService.onChunkServerUp - Cannot get chunks.");
+            logger.error("ChunkServerService.onChunkServerUp - ", e);
         }
     }
 
@@ -95,7 +97,7 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
             else if (chunkDescriptor == null){
                 ArrayList<Machine> machines = new ArrayList<>();
                 machines.add(machine);
-                this.chunks.put(chunkName,  new ChunkDescriptor(chunkName, machines));
+                this.chunks.put(chunkName, new ChunkDescriptor(chunkName, machines));
             }
         }
     }

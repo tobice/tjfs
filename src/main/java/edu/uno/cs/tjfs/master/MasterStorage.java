@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -18,6 +19,7 @@ public class MasterStorage implements IMasterStorage{
     private Thread replicationThread;
     private int logFileCount;
     private int replicationIntervalTime;
+    final static Logger logger = BaseLogger.getLogger(MasterStorage.class);
 
     public MasterStorage(Path path, ILocalFsClient localFsClient, IMasterClient masterClient, int replicationIntervalTime){
         this.localFsClient = localFsClient;
@@ -36,8 +38,8 @@ public class MasterStorage implements IMasterStorage{
                         List<FileDescriptor> logFiles = this.masterClient.getLog(this.logFileCount);
                         updateLog(logFiles);
                     } catch (Exception e) {
-                        BaseLogger.error("MasterStorage.startReplication - Error while getting the logs from the master");
-                        BaseLogger.error("MasterStorage.startReplication - ", e);
+                        logger.error("MasterStorage.startReplication - Error while getting the logs from the master");
+                        logger.error("MasterStorage.startReplication - ", e);
                     }
 
                 }
@@ -80,8 +82,8 @@ public class MasterStorage implements IMasterStorage{
                     gson.toJson(file).getBytes());
             this.fileSystem.put(path, file);
         } catch (Exception e) {
-            BaseLogger.error("Error while putting file in master.");
-            BaseLogger.error("MasterStorage.putFile", e);
+            logger.error("Error while putting file in master.");
+            logger.error("MasterStorage.putFile", e);
             throw new TjfsException("Error while putting file in master", e);
         }
     }
@@ -103,8 +105,8 @@ public class MasterStorage implements IMasterStorage{
                 }
             }
         }catch(IOException e){
-            BaseLogger.error("MasterStorage.getLog - Error while getting the log.");
-            BaseLogger.error("MaterStorage.getLog - ", e);
+            logger.error("MasterStorage.getLog - Error while getting the log.");
+            logger.error("MaterStorage.getLog - ", e);
         }
         return result;
     }

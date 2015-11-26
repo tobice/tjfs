@@ -5,9 +5,11 @@ import edu.uno.cs.tjfs.common.messages.*;
 import java.io.InputStream;
 
 import edu.uno.cs.tjfs.common.messages.arguments.*;
+import org.apache.log4j.Logger;
 
 public class ChunkClient implements IChunkClient {
     private IMessageClient messageClient;
+    final static Logger logger = BaseLogger.getLogger(ChunkClient.class);
     public ChunkClient(IMessageClient messageClient){
         this.messageClient = messageClient;
     }
@@ -64,7 +66,7 @@ public class ChunkClient implements IChunkClient {
             try {
                 replicateAsync(chunkDescriptor.chunkServers.get(0), chunkDescriptor.chunkServers.get(1), chunkDescriptor.name);
             }catch(Exception e){
-                BaseLogger.info("Error: " + e.getMessage());
+                logger.info("Error: " + e.getMessage());
             }
 
         }catch(Exception e){

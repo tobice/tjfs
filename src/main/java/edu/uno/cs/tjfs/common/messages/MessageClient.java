@@ -8,6 +8,7 @@ import edu.uno.cs.tjfs.common.MessageParseException;
 import edu.uno.cs.tjfs.common.MessageParser;
 import edu.uno.cs.tjfs.common.messages.arguments.ErrorResponseArgs;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,8 +18,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 public class MessageClient implements IMessageClient {
+    final static Logger logger = BaseLogger.getLogger(Logger.class);
     public Response send(Machine machine, Request request) throws BadRequestException, BadResponseException, ConnectionFailureException, TjfsClientException {
-        BaseLogger.info("MessageClient.send - Sending a message to " + machine.ip + " at " + machine.port);
+        logger.info("MessageClient.send - Sending a message to " + machine.ip + " at " + machine.port);
         InetAddress address;
         Socket socket = null;
         InputStream socketInStream = null;
@@ -40,18 +42,18 @@ public class MessageClient implements IMessageClient {
             result = parser.fromStreamToResponse(socketInStream, request.header.responseClass);
         }
         catch(BadRequestException e){
-            BaseLogger.error("MessageClient.send - the request could not be converted into the stream.");
-            BaseLogger.error("MessageClient.send", e);
+            logger.error("MessageClient.send - the request could not be converted into the stream.");
+            logger.error("MessageClient.send", e);
             throw e;
         }
         catch (MessageParseException e){
-            BaseLogger.error("MessageClient.send - the stream cannot be parsed to response.");
-            BaseLogger.error("MessageClient.send", e);
+            logger.error("MessageClient.send - the stream cannot be parsed to response.");
+            logger.error("MessageClient.send", e);
             throw new BadResponseException(e.getMessage(), null);
         }
         catch (Exception e){
-            BaseLogger.error("MessagClient.send - error connecting to the server.");
-            //BaseLogger.error(e);
+            logger.error("MessagClient.send - error connecting to the server.");
+            //logger.error(e);
             throw new ConnectionFailureException(e.getMessage());
         }
         finally {
@@ -60,8 +62,8 @@ public class MessageClient implements IMessageClient {
                 socketOutStream.close();
                 socket.close();
             }catch(Exception e){
-//                BaseLogger.error("MessageClient.send - The client socket cannot be closed.");
-//                BaseLogger.error("MessageClient.send", e);
+//                logger.error("MessageClient.send - The client socket cannot be closed.");
+//                logger.error("MessageClient.send", e);
             }
         }
 
@@ -75,14 +77,14 @@ public class MessageClient implements IMessageClient {
     }
 
     public void sendAsync(Machine machine, Request request) throws BadRequestException, ConnectionFailureException{
-        BaseLogger.trace("MessageClient.SendAsyc - Sending the message asynchronously.");
+        logger.trace("MessageClient.SendAsyc - Sending the message asynchronously.");
         Thread thread = new Thread(() -> {
             try {
                 send(machine, request);
             } catch (Exception e) {
-                BaseLogger.error("SendAsync - " + e.getMessage());
+                logger.error("SendAsync - " + e.getMessage());
             }
-            BaseLogger.trace("MessageClient.SendAsyc - Finished sending the message asynchronously.");
+            logger.trace("MessageClient.SendAsyc - Finished sending the message asynchronously.");
         });
         thread.start();
     }
