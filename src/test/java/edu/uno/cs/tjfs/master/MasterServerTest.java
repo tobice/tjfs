@@ -1,6 +1,6 @@
 package edu.uno.cs.tjfs.master;
 
-import edu.uno.cs.tjfs.chunkserver.ChunkServer;
+import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.MCommand;
 import edu.uno.cs.tjfs.common.messages.Request;
@@ -10,7 +10,9 @@ import edu.uno.cs.tjfs.common.messages.arguments.GetFileRequestArgs;
 import edu.uno.cs.tjfs.common.messages.arguments.GetFileResponseArgs;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 
 import java.io.IOException;
@@ -27,6 +29,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 public class MasterServerTest {
     private MasterServer masterServer;
 
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
+
     @Mock
     private IZookeeperClient zookeeperClient;
 
@@ -42,8 +47,9 @@ public class MasterServerTest {
     public void setUp() throws IOException {
         initMocks(this);
         LocalFsClient localFsClient = new LocalFsClient();
+        Config config = new Config();
         chunkServerService = new ChunkServerService(zookeeperClient, chunkClient);
-        MasterStorage masterStorage = new MasterStorage(Paths.get("fs/test"), localFsClient, masterClient);
+        MasterStorage masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
         this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient);
     }
 

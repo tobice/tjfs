@@ -1,5 +1,8 @@
 package edu.uno.cs.tjfs;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class Config {
     protected int chunkSize = 16 * 1024 * 1024;
     protected int executorPoolSize = 3;
@@ -28,5 +31,11 @@ public class Config {
         return zookeeperSessionTimeout;
     }
 
-    public int getMasterReplicationIntervalTime() { return masterReplicationIntervalTime; }
+    public int getMasterReplicationIntervalTime() {
+        return masterReplicationIntervalTime;
+    }
+
+    public Path getMasterStoragePath(){
+        return Paths.get("fs/MasterFS");
+    }
 }

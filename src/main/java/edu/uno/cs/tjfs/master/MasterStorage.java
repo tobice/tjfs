@@ -17,21 +17,21 @@ public class MasterStorage implements IMasterStorage{
     private IMasterClient masterClient;
     private Thread replicationThread;
     private int logFileCount;
+    private int replicationIntervalTime;
 
-    public MasterStorage(Path path, ILocalFsClient localFsClient, IMasterClient masterClient){
+    public MasterStorage(Path path, ILocalFsClient localFsClient, IMasterClient masterClient, int replicationIntervalTime){
         this.localFsClient = localFsClient;
         this.fileSystemPath = path;
         this.masterClient = masterClient;
+        this.replicationIntervalTime = replicationIntervalTime;
     }
 
     public void startReplication() {
-        Config config = new Config();
-        int intervalTime = config.getMasterReplicationIntervalTime();
         replicationThread = new Thread(() -> {
             try {
                 while (true) {
                     // Wait first so that the actual master server boots up and registers.
-                    Thread.sleep(intervalTime);
+                    Thread.sleep(replicationIntervalTime);
                     try {
                         List<FileDescriptor> logFiles = this.masterClient.getLog(this.logFileCount);
                         updateLog(logFiles);
