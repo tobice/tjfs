@@ -52,7 +52,7 @@ public class MasterStorageTest {
     }
 
     @Test
-    public void  getPutFileTest() throws IOException{
+    public void  getPutFileTest() throws IOException, TjfsException {
         //should not return null
         Path testPath = Paths.get("/home/testpath");
         FileDescriptor fileDescriptor = masterStorage.getFile(testPath);

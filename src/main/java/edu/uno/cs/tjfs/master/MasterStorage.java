@@ -60,7 +60,7 @@ public class MasterStorage implements IMasterStorage{
         }
     }
 
-    public synchronized void updateLog(List<FileDescriptor> logs) throws IOException {
+    public synchronized void updateLog(List<FileDescriptor> logs) throws TjfsException {
         for (FileDescriptor log : logs){
             putFile(log.path, log);
         }
@@ -72,7 +72,7 @@ public class MasterStorage implements IMasterStorage{
     }
 
     @Override
-    public synchronized void putFile(Path path, FileDescriptor file) throws IOException{
+    public synchronized void putFile(Path path, FileDescriptor file) throws TjfsException{
         Gson gson = CustomGson.create();
         try {
             this.localFsClient.writeBytesToFile(
@@ -82,7 +82,7 @@ public class MasterStorage implements IMasterStorage{
         } catch (Exception e) {
             BaseLogger.error("Error while putting file in master.");
             BaseLogger.error("MasterStorage.putFile", e);
-            throw e;
+            throw new TjfsException("Error while putting file in master", e);
         }
     }
 

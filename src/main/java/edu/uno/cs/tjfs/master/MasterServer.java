@@ -8,7 +8,6 @@ import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -109,12 +108,12 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         return Response.Success(new GetFileResponseArgs(fileDescriptor));
     }
 
-    private Response putFile(PutFileRequestArgs args) throws IOException {
+    private Response putFile(PutFileRequestArgs args) throws TjfsException {
         this.storage.putFile(args.file.path, args.file);
         return Response.Success();
     }
 
-    private Response getLog(GetLogRequestArgs args) throws IOException {
+    private Response getLog(GetLogRequestArgs args){
         List<FileDescriptor> result = storage.getLog(args.logID);
         return Response.Success(new GetLogResponseArgs(result));
     }
@@ -125,7 +124,6 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
             attemptToBecomeMaster();
         } else {
             BaseLogger.error("MasterServer.onMasterServerDown - listening to its own down event.");
-            //throw new TjfsException("Master server listens to its own going down event.");
         }
     }
 }
