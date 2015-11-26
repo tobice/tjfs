@@ -42,7 +42,7 @@ public interface IMasterClient {
      * Return a list of files and directories in given directory. Should return empty list when
      * the directory does not exist (= is empty).
      * @param path directory path
-     * @return list of absolute paths. Folders end with a slash (/)
+     * @return list file and directory names. Folders end with a slash (/)
      */
     String[] list(Path path) throws TjfsException;
 }

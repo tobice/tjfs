@@ -2,6 +2,7 @@ package edu.uno.cs.tjfs.client;
 
 import edu.uno.cs.tjfs.SoftConfig;
 import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -15,9 +16,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -28,6 +28,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+
+import static edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient.LockType.*;
 
 public class TjfsClientTest {
 
@@ -43,15 +45,18 @@ public class TjfsClientTest {
     @Mock
     IChunkClient chunkClient;
 
+    @Mock
+    IZookeeperClient zkClient;
+
     @Before
     public void setUp() throws Exception {
         initMocks(this);
         masterClient = new DummyMasterClient();
         config = new SoftConfig();
-        tjfsClient = new TjfsClient(config, masterClient, chunkClient);
+        tjfsClient = new TjfsClient(config, masterClient, chunkClient, zkClient);
 
         path = Paths.get("/some/file");
-        file = new FileDescriptor(path, null,
+        file = new FileDescriptor(path, new Date(),
             new ArrayList<>(Arrays.asList(
                 new ChunkDescriptor("0", new LinkedList<>(), 3, 0),
                 new ChunkDescriptor("1", new LinkedList<>(), 3, 1),
@@ -77,6 +82,10 @@ public class TjfsClientTest {
         assertThat(file.getChunk(1).size, is(3));
         assertThat(file.getChunk(2).size, is(2));
         assertThat(file.getChunk(3), equalTo(null));
+
+        // Test that the file has been locked and unlocked
+        verify(zkClient).acquireFileLock(path, WRITE);
+        verify(zkClient).releaseFileLock(path, WRITE);
 
         // Test that the chunks have been correctly pushed using the chunk client.
         ArgumentCaptor<InputStream> argument = ArgumentCaptor.forClass(InputStream.class);
@@ -115,6 +124,12 @@ public class TjfsClientTest {
 
         InputStream stream = tjfsClient.get(path);
         assertThat(IOUtils.toString(stream), equalTo("abcdefghijklmn"));
+
+        // Test that the file has been locked and unlocked (just wait a bit to let the thread
+        // finish)
+        Thread.sleep(100);
+        verify(zkClient).acquireFileLock(path, READ);
+        verify(zkClient).releaseFileLock(path, READ);
     }
 
     @Test
@@ -137,5 +152,57 @@ public class TjfsClientTest {
         InputStream stream = tjfsClient.get(path);
         IOUtils.toString(stream);
         stream.close();
+    }
+
+    @Test
+    public void testDelete() throws Exception {
+
+        // First put a standard file, then delete it and finally make sure that the file has
+        // been replaced with an empty descriptor
+        masterClient.putFile(file);
+        assertThat(masterClient.getFile(file.path), equalTo(file));
+        tjfsClient.delete(file.path);
+        assertThat(masterClient.getFile(file.path), equalTo(new FileDescriptor(file.path)));
+
+        // Test that the file has been locked and unlocked
+        verify(zkClient).acquireFileLock(file.path, WRITE);
+        verify(zkClient).releaseFileLock(file.path, WRITE);
+    }
+
+    @Test
+    public void testGetSize() throws Exception {
+        masterClient.putFile(file);
+        assertThat(tjfsClient.getSize(file.path), equalTo(file.getSize()));
+    }
+
+    @Test
+    public void testGetTime() throws Exception {
+        masterClient.putFile(file);
+        assertThat(tjfsClient.getTime(file.path), equalTo(file.time));
+    }
+
+    @Test
+    public void testList() throws Exception {
+        masterClient.putFile(file);
+        assertThat(tjfsClient.list(Paths.get("/some/")), equalTo(new String[]{"file"}));
+    }
+
+    @Test
+    public void testMove() throws Exception {
+        Path sourcePath = Paths.get("/a");
+        Path destinationPath = Paths.get("/b");
+
+        FileDescriptor sourceFile = new FileDescriptor(sourcePath, file.time, file.chunks);
+        masterClient.putFile(sourceFile);
+        tjfsClient.move(sourcePath, destinationPath);
+
+        assertThat(masterClient.getFile(sourcePath), equalTo(new FileDescriptor(sourcePath)));
+        assertThat(masterClient.getFile(destinationPath), equalTo(new FileDescriptor(destinationPath, file.time, file.chunks)));
+
+        // Test that the file has been locked and unlocked
+        verify(zkClient).acquireFileLock(sourcePath, WRITE);
+        verify(zkClient).acquireFileLock(destinationPath, WRITE);
+        verify(zkClient).releaseFileLock(sourcePath, WRITE);
+        verify(zkClient).releaseFileLock(destinationPath, WRITE);
     }
 }

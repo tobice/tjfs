@@ -5,22 +5,31 @@ import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.FileDescriptor;
 import edu.uno.cs.tjfs.common.messages.MessageClient;
 import edu.uno.cs.tjfs.common.threads.JobExecutor;
+import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
+import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
+
+import static edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient.LockType.*;
 
 public class TjfsClient implements ITjfsClient {
     private Config config;
     private IMasterClient masterClient;
     private IChunkClient chunkClient;
+    private IZookeeperClient zkClient;
 
-    public TjfsClient(Config config, IMasterClient masterClient, IChunkClient chunkClient) {
+    final static Logger logger = Logger.getLogger(TjfsClient.class);
+
+    public TjfsClient(Config config, IMasterClient masterClient, IChunkClient chunkClient, IZookeeperClient zkClient) {
         this.config = config;
         this.masterClient = masterClient;
         this.chunkClient = chunkClient;
+        this.zkClient = zkClient;
     }
 
     @Override
@@ -49,7 +58,8 @@ public class TjfsClient implements ITjfsClient {
                 throw new TjfsException("Reading out of file range");
             }
 
-            // TODO: lock file
+            // Lock the file so that nobody changes it while we're reading
+            zkClient.acquireFileLock(path, READ);
 
             // "Pipe" incoming data from the chunk servers directly to the user. The input stream
             // is wrapped by another stream that lets us pass a possible exception to the end user.
@@ -70,8 +80,7 @@ public class TjfsClient implements ITjfsClient {
                     // If we fail, we pass the exception through the special stream to the end user.
                     try {
                         outputStream.close();
-                        inWithException.fail(new TjfsException("Downloading file failed. " +
-                            e.getMessage(), e));
+                        inWithException.fail(new TjfsException("Downloading file failed. " + e.getMessage(), e));
                     } catch (IOException e1) {
                         inWithException.fail(new TjfsException("Downloading file failed. Plus " +
                             "unable to close the stream with message: " + e1.getMessage(), e));
@@ -79,7 +88,11 @@ public class TjfsClient implements ITjfsClient {
                 } finally {
                     // Let the stream know that it can throw the exception (because he has it now).
                     inWithException.countDown();
-                    // TODO: unlock the file
+                    try {
+                        zkClient.releaseFileLock(path, READ);
+                    } catch (ZookeeperException e) {
+                        logger.warn("Unable to release the file lock: " + e.getMessage());
+                    }
                 }
             });
             thread.start();
@@ -99,7 +112,8 @@ public class TjfsClient implements ITjfsClient {
     @Override
     public void put(Path path, InputStream data, int byteOffset) throws TjfsClientException {
         try {
-            // TODO: Lock the file
+            // Lock the file so that nobody tries to change the file at the same time
+            zkClient.acquireFileLock(path, WRITE);
 
             // Get file descriptor. Might by empty, doesn't matter.
             FileDescriptor file = masterClient.getFile(path);
@@ -115,7 +129,7 @@ public class TjfsClient implements ITjfsClient {
             // Update the descriptor.
             masterClient.putFile(file);
 
-            // TODO: Unlock the file
+            zkClient.releaseFileLock(path, WRITE);
         } catch (TjfsException e) {
             String message = "File transfer failed. Reason: " + e.getMessage();
             throw new TjfsClientException(message, e);
@@ -124,27 +138,74 @@ public class TjfsClient implements ITjfsClient {
 
     @Override
     public void delete(Path path) throws TjfsClientException {
+        try {
+            zkClient.acquireFileLock(path, WRITE);
 
+            FileDescriptor deletedFile = new FileDescriptor(path);
+            masterClient.putFile(deletedFile);
+
+        } catch (TjfsException e) {
+            String message = "Deleting file failed. Reason: " + e.getMessage();
+            throw new TjfsClientException(message, e);
+        } finally {
+            try {
+                zkClient.releaseFileLock(path, WRITE);
+            } catch (ZookeeperException e) {
+                logger.warn("Unable to release the file lock: " + e.getMessage());
+            }
+        }
     }
 
     @Override
     public int getSize(Path path) throws TjfsClientException {
-        return 0;
+        try {
+            return masterClient.getFile(path).getSize();
+        } catch (TjfsException e) {
+            throw new TjfsClientException("Failed to obtain file size. Reason: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public Date getTime(Path path) throws TjfsClientException {
-        return null;
+        try {
+            return masterClient.getFile(path).time;
+        } catch (TjfsException e) {
+            throw new TjfsClientException("Failed to obtain time. Reason: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public String[] list(Path path) throws TjfsClientException {
-        return new String[0];
+        try {
+            return masterClient.list(path);
+        } catch (TjfsException e) {
+            throw new TjfsClientException("Failed to obtain the list. Reason: " + e.getMessage(), e);
+        }
     }
 
     @Override
     public void move(Path sourcePath, Path destinationPath) throws TjfsClientException {
+        try {
+            zkClient.acquireFileLock(sourcePath, WRITE);
+            zkClient.acquireFileLock(destinationPath, WRITE);
 
+            // Moving a file is a simple procedure. We take the original descriptor, move it
+            // to a new location and delete the old one (by replacing it with an empty descriptor).
+            // Chunks remain the same (no reason to do anything with them).
+            FileDescriptor source = masterClient.getFile(sourcePath);
+            FileDescriptor destination = new FileDescriptor(destinationPath, new Date(), source.chunks);
+            masterClient.putFile(new FileDescriptor(sourcePath, new Date(), new ArrayList<>()));
+            masterClient.putFile(destination);
+        } catch (TjfsException e) {
+            throw new TjfsClientException("Unable to move the file. Reason: " + e.getMessage(), e);
+        } finally {
+            try {
+                zkClient.releaseFileLock(sourcePath, WRITE);
+                zkClient.releaseFileLock(destinationPath, WRITE);
+            } catch (ZookeeperException e) {
+                logger.warn("Unable to release the file lock: " + e.getMessage());
+            }
+        }
     }
 
     /** Initialize instance of TjfsClient */
@@ -153,6 +214,6 @@ public class TjfsClient implements ITjfsClient {
         MessageClient messageClient = new MessageClient();
         ChunkClient chunkClient = new ChunkClient(messageClient);
         MasterClient masterClient = new MasterClient(messageClient, zkClient);
-        return new TjfsClient(config, masterClient, chunkClient);
+        return new TjfsClient(config, masterClient, chunkClient, zkClient);
     }
 }

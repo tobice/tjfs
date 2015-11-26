@@ -38,8 +38,7 @@ public interface ITjfsClient {
     void put(Path path, InputStream data) throws TjfsClientException;
 
     /**
-     * Write data to the file at the given path starting at the given byte offset. If the file
-     * does not exist an exception is thrown.
+     * Write data to the file at the given path starting at the given byte offset.
      * @param path file path
      * @param data data to be written
      * @param byteOffset position in the file
@@ -53,7 +52,7 @@ public interface ITjfsClient {
     void delete(Path path) throws TjfsClientException;
 
     /**
-     * Get size of a file at given path.
+     * Get size of a file at given path. Returns zero for a file that doesn't exist.
      * @param path file path
      * @return number of bytes
      */

@@ -51,7 +51,25 @@ public class DummyMasterClient implements IMasterClient {
 
     @Override
     public String[] list(Path path) throws TjfsException {
-        return new String[0];
+        String prefix = path.toString();
+        if (!prefix.endsWith("/")) {
+            prefix += "/"; // normalize
+        }
+        Set<String> result = new HashSet<>();
+
+        for (Path key : files.keySet()) {
+            String s = key.toString();
+            if (s.startsWith(prefix)) {
+                s = s.replaceFirst("^" + prefix, "");
+                if (!s.contains("/")) {
+                    result.add(s);
+                } else {
+                    result.add(s.replaceAll("/.*$", "/"));
+                }
+            }
+        }
+
+        return result.toArray(new String[result.size()]);
     }
 
     private List<Machine> getRandomChunkServers(int number) {
