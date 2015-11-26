@@ -64,7 +64,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
                 while (ee.hasMoreElements()) {
                     InetAddress i = (InetAddress) ee.nextElement();
                     String hostAddress = i.getHostAddress();
-                    if (!hostAddress.contains("127.0.0") && !hostAddress.contains("192.168.")
+                    if (!hostAddress.contains("192.168.")
                             && !hostAddress.contains("0:0:0"))
                         result = hostAddress;
                 }
@@ -126,8 +126,11 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     }
 
     private Response getFile(GetFileRequestArgs args){
-        FileDescriptor file = this.storage.getFile(args.path);
-        return Response.Success(new GetFileResponseArgs(file));
+        FileDescriptor fileDescriptor = this.storage.getFile(args.path);
+        fileDescriptor = fileDescriptor == null
+                            ? new FileDescriptor(args.path)
+                            : chunkServerService.updateChunkServers(fileDescriptor);
+        return Response.Success(new GetFileResponseArgs(fileDescriptor));
     }
 
     private Response putFile(PutFileRequestArgs args) throws IOException {

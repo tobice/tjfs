@@ -17,7 +17,7 @@ public class Launcher {
         ChunkServerService chunkServerService = new ChunkServerService(zClient, chunkClient);
         MasterClient masterClient = new MasterClient(messageClient, zClient);
 
-        MasterStorage masterStorage = new MasterStorage(Paths.get("fs/masterFS"), localFsClient, chunkServerService, masterClient);
+        MasterStorage masterStorage = new MasterStorage(Paths.get("fs/masterFS"), localFsClient, masterClient);
 
         MasterServer masterServer = new MasterServer(masterStorage, chunkServerService, zClient);
         masterServer.start();

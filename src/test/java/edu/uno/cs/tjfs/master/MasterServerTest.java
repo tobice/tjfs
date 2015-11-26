@@ -14,6 +14,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
@@ -41,12 +43,12 @@ public class MasterServerTest {
         initMocks(this);
         LocalFsClient localFsClient = new LocalFsClient();
         chunkServerService = new ChunkServerService(zookeeperClient, chunkClient);
-        MasterStorage masterStorage = new MasterStorage(Paths.get("fs/test"), localFsClient, chunkServerService, masterClient);
+        MasterStorage masterStorage = new MasterStorage(Paths.get("fs/test"), localFsClient, masterClient);
         this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient);
     }
 
     @Test
-    public void getIPTest() throws TjfsException {
+    public void getIPTest() throws TjfsException, UnknownHostException {
         String result = this.masterServer.getCurrentIPAddress();
         assertTrue(!result.isEmpty());
     }
