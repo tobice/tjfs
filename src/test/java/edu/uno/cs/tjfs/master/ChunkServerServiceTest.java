@@ -54,6 +54,7 @@ public class ChunkServerServiceTest {
         when(chunkClient.list(machine2)).thenReturn(listOfChunkNames2);
 
         this.chunkServerService.onChunkServerUp(machine);
+        machines.add(machine);
         List<Machine> listofMachinesFromChunkServers = new ArrayList<Machine>();
         listofMachinesFromChunkServers.add(machine);
         when(zookeeperClient.getChunkServers()).thenReturn(listofMachinesFromChunkServers);
@@ -63,8 +64,8 @@ public class ChunkServerServiceTest {
 
         assertEquals(listOfChunkNames.length, chunkServerService.chunks.size());
         for(int counter = 0; counter < chunkServerService.chunks.size(); counter++){
-            assertTrue(chunkServerService.chunks.get(counter).chunkServers.size() == 1);
-            assertTrue(chunkServerService.chunks.get(counter).chunkServers.get(0).equals(machine));
+            assertTrue(chunkServerService.chunks.get(listOfChunkNames[0]).chunkServers.size() == 1);
+            assertTrue(chunkServerService.chunks.get(listOfChunkNames[0]).chunkServers.get(0).equals(machine));
         }
 
         this.chunkServerService.onChunkServerUp(machine2);
@@ -77,9 +78,9 @@ public class ChunkServerServiceTest {
 
         assertEquals(9, chunkServerService.chunks.size());
 
-        assertEquals(chunkServerService.chunks.get(0).chunkServers.size(), 2);
-        assertEquals(chunkServerService.chunks.get(5).chunkServers.size(), 2);
-        assertEquals(chunkServerService.chunks.get(8).chunkServers.size(), 1);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames[0]).chunkServers.size(), 2);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames[5]).chunkServers.size(), 2);
+        assertEquals(chunkServerService.chunks.get("Chunkies").chunkServers.size(), 1);
 
 
         //adding the same machine should not make a difference
@@ -92,9 +93,9 @@ public class ChunkServerServiceTest {
 
         assertEquals(9, chunkServerService.chunks.size());
 
-        assertEquals(chunkServerService.chunks.get(0).chunkServers.size(), 2);
-        assertEquals(chunkServerService.chunks.get(5).chunkServers.size(), 2);
-        assertEquals(chunkServerService.chunks.get(8).chunkServers.size(), 1);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames[0]).chunkServers.size(), 2);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames[5]).chunkServers.size(), 2);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames2[8]).chunkServers.size(), 1);
 
         //A machine cannot contain two chunks with the same name. So I would not test that
     }
@@ -134,27 +135,30 @@ public class ChunkServerServiceTest {
 
         assertEquals(10, chunkServerService.chunks.size());
 
-        assertEquals(chunkServerService.chunks.get(0).chunkServers.size(), 3);
-        assertEquals(chunkServerService.chunks.get(5).chunkServers.size(), 3);
-        assertEquals(chunkServerService.chunks.get(8).chunkServers.size(), 2);
-        assertEquals(chunkServerService.chunks.get(9).chunkServers.size(), 1);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames[0]).chunkServers.size(), 3);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames[5]).chunkServers.size(), 3);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames2[8]).chunkServers.size(), 2);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames3[9]).chunkServers.size(), 1);
 
 //        when(chunkClient.replicateSync(Mockito.any(Machine.class), Mockito.any(Machine.class), Mockito.any(String.class))).then(doNothing());
         Mockito.doThrow(new TjfsException("")).doNothing().when(chunkClient).replicateAsync(Mockito.any(Machine.class), Mockito.any(Machine.class), Mockito.any(String.class));
         this.chunkServerService.onChunkServerDown(machine2);
 
+        assertTrue(chunkServerService.getChunkServers().size() == 3);
+
         machines.remove(machine2);
         when(zookeeperClient.getChunkServers()).thenReturn(machines);
         //number of chunks should be the same but the chunk server should not be there any more
+        assertTrue(chunkServerService.getChunkServers().size() == 2);
         assertEquals(10, chunkServerService.chunks.size());
         assertEquals(this.chunkServerService.getChunkServers().size(), 2);
         assertEquals((this.chunkServerService.getChunkServers().contains(machine)
                 && this.chunkServerService.getChunkServers().contains(machine3)), true);
 
-        System.out.println(chunkServerService.chunks.get(9).name);
-        assertEquals(chunkServerService.chunks.get(0).chunkServers.size(), 2);
-        assertEquals(chunkServerService.chunks.get(6).chunkServers.size(), 2);
-        assertEquals(chunkServerService.chunks.get(9).chunkServers.size(), 1);
+        System.out.println(chunkServerService.chunks.get(listOfChunkNames3[9]).name);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames[0]).chunkServers.size(), 2);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames2[6]).chunkServers.size(), 2);
+        assertEquals(chunkServerService.chunks.get(listOfChunkNames3[9]).chunkServers.size(), 1);
     }
 
     @Test

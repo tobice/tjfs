@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -88,6 +89,13 @@ public class MasterServerTest {
         //add couple of dummy chunk servers
         chunkServerService.onChunkServerUp(testMachine1);
         chunkServerService.onChunkServerUp(testMachine2);
+
+        List<Machine> machines = new ArrayList<Machine>(){{
+            add(testMachine1);
+            add(testMachine2);
+        }};
+
+        when(zookeeperClient.getChunkServers()).thenReturn(machines);
 
         Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(10), null, 0);
         AllocateChunkResponseArgs args =  (AllocateChunkResponseArgs)this.masterServer.process(request).args;

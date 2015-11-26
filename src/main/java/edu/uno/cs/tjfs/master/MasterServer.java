@@ -100,9 +100,12 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
 
     private Response getFile(GetFileRequestArgs args){
         FileDescriptor fileDescriptor = this.storage.getFile(args.path);
-        fileDescriptor = fileDescriptor == null
-                            ? new FileDescriptor(args.path)
-                            : chunkServerService.updateChunkServers(fileDescriptor);
+        fileDescriptor = fileDescriptor == null ? new FileDescriptor(args.path) : fileDescriptor;
+        try{
+            fileDescriptor = chunkServerService.updateChunkServers(fileDescriptor);
+        }catch(TjfsException e){
+            fileDescriptor = new FileDescriptor(args.path);
+        }
         return Response.Success(new GetFileResponseArgs(fileDescriptor));
     }
 

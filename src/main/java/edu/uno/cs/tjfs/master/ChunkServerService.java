@@ -14,12 +14,12 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
     IZookeeperClient zkClient;
     IChunkClient chunkClient;
     /** The up-to-date chunk descriptors with running chunk servers */
-    List<ChunkDescriptor> chunks;
+    Map<String, ChunkDescriptor> chunks;
 
     public ChunkServerService(IZookeeperClient zkClient, IChunkClient chunkClient) {
         this.zkClient = zkClient;
         this.chunkClient = chunkClient;
-        this.chunks = new ArrayList<>();
+        this.chunks = new HashMap<>();
     }
 
     public void start() throws ZookeeperException {
@@ -35,10 +35,23 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         }
     }
 
+    private List<ChunkDescriptor> getChunksFromMachine(Machine machine){
+        List<ChunkDescriptor> result = new ArrayList<>();
+        Iterator it = chunks.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+
+            if (((ChunkDescriptor) pair.getValue()).chunkServers.contains(machine)){
+                result.add((ChunkDescriptor) pair.getValue());
+            }
+        }
+        return result;
+    }
+
     @Override
     public void onChunkServerDown(Machine machine) {
         //This is going to go through all the chunks not just the ones on that machine
-        List<ChunkDescriptor> tempChunks = chunks.stream().filter(x->x.chunkServers.contains(machine)).collect(Collectors.toList());
+        List<ChunkDescriptor> tempChunks = getChunksFromMachine(machine);
         for (ChunkDescriptor chunk : tempChunks) {
             chunk.chunkServers.remove(machine);
             if (chunk.chunkServers.size() < 2) {
@@ -50,7 +63,6 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
                             chunk.chunkServers.get(0),
                             machineToReplicateTo,
                             chunk.name);
-                    //After the chunk is replicated to that server..add it to the chunkservers list of chunks
                     chunk.chunkServers.add(machineToReplicateTo);
                 } catch (TjfsException e) {
                     BaseLogger.error("ChunkServerService.onChunkServerDown - Cannot Run the Chunk Replication");
@@ -74,16 +86,16 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
     private void updateChunkMappingsFromMachine(Machine machine) throws TjfsException {
         String[] listOfChunks = this.chunkClient.list(machine);
         for(String chunkName : listOfChunks){
-            ChunkDescriptor chunkDescriptor = this.chunks.stream().filter(x->x.name.equals(chunkName)).findFirst().orElse(null);
+            ChunkDescriptor chunkDescriptor = this.chunks.get(chunkName);
             if (chunkDescriptor != null && !chunkDescriptor.chunkServers.contains(machine)){
                 chunkDescriptor.chunkServers.add(machine);
 
-                this.chunks.set(this.chunks.indexOf(chunkDescriptor), chunkDescriptor);
+                this.chunks.put(chunkName, chunkDescriptor);
             }
             else if (chunkDescriptor == null){
                 ArrayList<Machine> machines = new ArrayList<>();
                 machines.add(machine);
-                this.chunks.add(new ChunkDescriptor(chunkName, machines));
+                this.chunks.put(chunkName,  new ChunkDescriptor(chunkName, machines));
             }
         }
     }
@@ -109,13 +121,13 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         return returnMachine;
     }
 
-    public FileDescriptor updateChunkServers(FileDescriptor fileDescriptor) {
+    public FileDescriptor updateChunkServers(FileDescriptor fileDescriptor) throws TjfsException {
         // TODO: maybe create new FileDescriptor since it's immutable
         ArrayList<ChunkDescriptor> updatedChunkMappings = new ArrayList<>();
         if (fileDescriptor.chunks != null)
             for (ChunkDescriptor chunk : fileDescriptor.chunks) {
-                ChunkDescriptor updatedDescriptor = this.chunks.stream().filter(x->x.name.equals(chunk.name)).findFirst().orElse(null);
-                if (updatedDescriptor == null) new TjfsException("Invalid chunks in the file");
+                ChunkDescriptor updatedDescriptor = this.chunks.get(chunk.name);
+                if (updatedDescriptor == null) throw new TjfsException("Invalid chunks in the file");
                 updatedChunkMappings.add(updatedDescriptor);
             }
         return new FileDescriptor(fileDescriptor.path, fileDescriptor.time, updatedChunkMappings);
