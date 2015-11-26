@@ -76,4 +76,9 @@ public class MasterClient implements IZookeeperClient.IMasterServerDownListener,
         Response response = this.messageClient.send(masterServer, request);
         return ((GetLogResponseArgs)response.args).logs;
     }
+
+    @Override
+    public String[] list(Path path) throws TjfsException {
+        return new String[0];
+    }
 }

@@ -49,6 +49,11 @@ public class DummyMasterClient implements IMasterClient {
         return null;
     }
 
+    @Override
+    public String[] list(Path path) throws TjfsException {
+        return new String[0];
+    }
+
     private List<Machine> getRandomChunkServers(int number) {
         Collections.shuffle(chunkServers);
         return new LinkedList<>(chunkServers.subList(0, number));
