@@ -16,7 +16,6 @@ import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -42,12 +41,13 @@ public class MasterServerTest {
     private IMasterClient masterClient;
 
     private ChunkServerService chunkServerService;
+    private Config config;
 
     @Before
     public void setUp() throws IOException {
         initMocks(this);
         LocalFsClient localFsClient = new LocalFsClient();
-        Config config = new Config();
+        config = new Config();
         chunkServerService = new ChunkServerService(zookeeperClient, chunkClient);
         MasterStorage masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
         this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient);
@@ -68,10 +68,12 @@ public class MasterServerTest {
     }
 
     @Test
-    public void startReplicationTest() throws TjfsException {
-//        when(this.masterClient.getLog(0)).thenReturn(new ArrayList<>());
-//        this.masterServer.becomeShadow();
-        //verify(masterClient).getLog(0); TODO:// how to do this? new thread
+    public void startReplicationTest() throws TjfsException, InterruptedException {
+        when(this.masterClient.getLog(0)).thenReturn(new ArrayList<>());
+        this.masterServer.becomeShadow();
+        //Give it some time so that the replication actually starts
+        Thread.sleep(config.getMasterReplicationIntervalTime() + 1000);
+        verify(masterClient).getLog(0);
     }
 
     @Test
