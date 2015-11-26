@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import org.apache.commons.io.IOUtils;
-import sun.util.resources.cldr.so.CurrencyNames_so;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -18,23 +17,21 @@ public class MasterStorage implements IMasterStorage{
     private IMasterClient masterClient;
     private Thread replicationThread;
     private int logFileCount;
-    private ChunkServerService chunkServerService;
+    private int replicationIntervalTime;
 
-    public MasterStorage(Path path, ILocalFsClient localFsClient, ChunkServerService service, IMasterClient masterClient){
+    public MasterStorage(Path path, ILocalFsClient localFsClient, IMasterClient masterClient, int replicationIntervalTime){
         this.localFsClient = localFsClient;
         this.fileSystemPath = path;
-        this.chunkServerService = service;
         this.masterClient = masterClient;
+        this.replicationIntervalTime = replicationIntervalTime;
     }
 
     public void startReplication() {
-        Config config = new Config();
-        int intervalTime = config.getMasterReplicationIntervalTime();
         replicationThread = new Thread(() -> {
             try {
                 while (true) {
                     // Wait first so that the actual master server boots up and registers.
-                    Thread.sleep(intervalTime);
+                    Thread.sleep(replicationIntervalTime);
                     try {
                         List<FileDescriptor> logFiles = this.masterClient.getLog(this.logFileCount);
                         updateLog(logFiles);
@@ -71,8 +68,7 @@ public class MasterStorage implements IMasterStorage{
 
     @Override
     public FileDescriptor getFile(Path path){
-        FileDescriptor fileDescriptor = this.fileSystem.get(path);
-        return fileDescriptor == null ? new FileDescriptor(path) : chunkServerService.updateChunkServers(this.fileSystem.get(path));
+        return this.fileSystem.get(path);
     }
 
     @Override

@@ -13,24 +13,20 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         IZookeeperClient.IChunkServerDownListener {
     IZookeeperClient zkClient;
     IChunkClient chunkClient;
-    List<Machine> chunkServers;
     /** The up-to-date chunk descriptors with running chunk servers */
     List<ChunkDescriptor> chunks;
 
     public ChunkServerService(IZookeeperClient zkClient, IChunkClient chunkClient) {
         this.zkClient = zkClient;
         this.chunkClient = chunkClient;
-        this.chunkServers = new ArrayList<>();
         this.chunks = new ArrayList<>();
     }
 
     public void start() throws ZookeeperException {
         zkClient.addOnChunkServerDownListener(this);
         zkClient.addOnChunkServerUpListener(this);
-        chunkServers = zkClient.getChunkServers();
-
         // For each chunk server, get chunks and add them to mappings
-        for(Machine machine : chunkServers){
+        for(Machine machine : zkClient.getChunkServers()){
             try {
                 updateChunkMappingsFromMachine(machine);
             } catch (TjfsException e) {
@@ -41,7 +37,6 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
 
     @Override
     public void onChunkServerDown(Machine machine) {
-        chunkServers.remove(machine);
         //This is going to go through all the chunks not just the ones on that machine
         List<ChunkDescriptor> tempChunks = chunks.stream().filter(x->x.chunkServers.contains(machine)).collect(Collectors.toList());
         for (ChunkDescriptor chunk : tempChunks) {
@@ -68,7 +63,6 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
 
     @Override
     public void onChunkServerUp(Machine machine) {
-        if (!chunkServers.contains(machine)) chunkServers.add(machine);
         try {
             updateChunkMappingsFromMachine(machine);
         }catch(Exception e){
@@ -95,15 +89,17 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
     }
 
     public List<Machine> getChunkServers() {
-        return chunkServers;
+        return zkClient.getChunkServers();
     }
 
     public List<Machine> getRandomChunkServers(int number) {
+        List<Machine> chunkServers = getChunkServers();
         Collections.shuffle(chunkServers);
         return new LinkedList<>(chunkServers.subList(0, number));
     }
 
     public Machine getRandomChunkServerNotEqualTo(Machine machine) {
+        List<Machine> chunkServers = getChunkServers();
         Collections.shuffle(chunkServers);
         Machine returnMachine = chunkServers.subList(0, 1).get(0);
         while (returnMachine.equals(machine)) {

@@ -1,6 +1,6 @@
 package edu.uno.cs.tjfs.master;
 
-import edu.uno.cs.tjfs.chunkserver.ChunkServer;
+import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.MCommand;
 import edu.uno.cs.tjfs.common.messages.Request;
@@ -10,10 +10,13 @@ import edu.uno.cs.tjfs.common.messages.arguments.GetFileRequestArgs;
 import edu.uno.cs.tjfs.common.messages.arguments.GetFileResponseArgs;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
@@ -25,6 +28,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 public class MasterServerTest {
     private MasterServer masterServer;
 
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
+
     @Mock
     private IZookeeperClient zookeeperClient;
 
@@ -35,35 +41,40 @@ public class MasterServerTest {
     private IMasterClient masterClient;
 
     private ChunkServerService chunkServerService;
+    private Config config;
 
     @Before
     public void setUp() throws IOException {
         initMocks(this);
         LocalFsClient localFsClient = new LocalFsClient();
+        config = new Config();
         chunkServerService = new ChunkServerService(zookeeperClient, chunkClient);
-        MasterStorage masterStorage = new MasterStorage(Paths.get("fs/test"), localFsClient, chunkServerService, masterClient);
-        this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient);
-    }
-
-    @Test
-    public void getIPTest() throws TjfsException {
-        String result = this.masterServer.getCurrentIPAddress();
-        assertTrue(!result.isEmpty());
+        MasterStorage masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
+        this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient, config);
     }
 
     @Test
     public void startTest() throws TjfsException {
         //should try to register as the client
-        Machine machine = new Machine(this.masterServer.getCurrentIPAddress(), 6002);
+        Machine machine = new Machine(config.getCurrentIPAddress(), config.getMasterPort());
         this.masterServer.start();
         verify(zookeeperClient).registerMasterServer(machine);
     }
 
     @Test
-    public void startReplicationTest() throws TjfsException {
-//        when(this.masterClient.getLog(0)).thenReturn(new ArrayList<>());
-//        this.masterServer.becomeShadow();
-        //verify(masterClient).getLog(0); TODO:// how to do this? new thread
+    public void startReplicationTest() throws TjfsException, InterruptedException {
+        when(this.masterClient.getLog(0)).thenReturn(new ArrayList<>());
+        this.masterServer.becomeShadow();
+        Thread replicationThread = new Thread(() -> {
+            try {
+                //Give it some time so that the replication actually starts
+                Thread.sleep(config.getMasterReplicationIntervalTime() + 1000);
+                verify(masterClient).getLog(0);
+            }catch(Exception e){
+                //do nothing
+            }
+        });
+        replicationThread.start();
     }
 
     @Test

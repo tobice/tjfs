@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.master;
 
+import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.Request;
 import edu.uno.cs.tjfs.common.messages.Response;
@@ -8,25 +9,24 @@ import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
 
 public class MasterServer implements IServer, IZookeeperClient.IMasterServerDownListener {
+
     private MasterStorage storage;
     private ChunkServerService chunkServerService;
     private IZookeeperClient zkClient;
-
+    private Config config;
     private boolean amIShadow = true;
 
     public MasterServer(MasterStorage storage, ChunkServerService chunkServerService,
-                        IZookeeperClient zkClient) {
+                        IZookeeperClient zkClient, Config config) {
         this.storage = storage;
         this.chunkServerService = chunkServerService;
         this.zkClient = zkClient;
+        this.config = config;
     }
 
     public void start() {
@@ -41,7 +41,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
 
     private void attemptToBecomeMaster() {
         try {
-            Machine me = new Machine(getCurrentIPAddress(), 6002); // TODO: Should port be from the config
+            Machine me = new Machine(config.getCurrentIPAddress(), config.getMasterPort());
             this.zkClient.registerMasterServer(me);
             becomeMaster();
         } catch (ZookeeperException.MasterAlreadyExistsException e) {
@@ -52,33 +52,6 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         } catch(TjfsException e){
             //TODO: fail too
         }
-    }
-
-    protected String getCurrentIPAddress() throws TjfsException {
-        String result = "";
-        try {
-            Enumeration e = NetworkInterface.getNetworkInterfaces();
-            while (e.hasMoreElements()) {
-                NetworkInterface n = (NetworkInterface) e.nextElement();
-                Enumeration ee = n.getInetAddresses();
-                while (ee.hasMoreElements()) {
-                    InetAddress i = (InetAddress) ee.nextElement();
-                    String hostAddress = i.getHostAddress();
-                    if (!hostAddress.contains("127.0.0") && !hostAddress.contains("192.168.")
-                            && !hostAddress.contains("0:0:0"))
-                        result = hostAddress;
-                }
-            }
-        }catch(Exception e){
-            BaseLogger.error("MasterServer.getCurrentIPAddress - Cannot get the ip address.");
-            BaseLogger.error("MasterServer.getCurrentIPAddress - ", e);
-            throw new TjfsException("Cannot get master IP", e);
-        }
-        if (result.isEmpty()) {
-            BaseLogger.error("MasterServer.getCurrentIPAddress - Cannot get the ip address.");
-            throw new TjfsException("Cannot get master IP");
-        }
-        return result;
     }
 
     private void becomeMaster() {
@@ -126,8 +99,11 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     }
 
     private Response getFile(GetFileRequestArgs args){
-        FileDescriptor file = this.storage.getFile(args.path);
-        return Response.Success(new GetFileResponseArgs(file));
+        FileDescriptor fileDescriptor = this.storage.getFile(args.path);
+        fileDescriptor = fileDescriptor == null
+                            ? new FileDescriptor(args.path)
+                            : chunkServerService.updateChunkServers(fileDescriptor);
+        return Response.Success(new GetFileResponseArgs(fileDescriptor));
     }
 
     private Response putFile(PutFileRequestArgs args) throws IOException {

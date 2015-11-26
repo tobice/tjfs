@@ -1,6 +1,7 @@
 package edu.uno.cs.tjfs.master;
 
 import com.google.gson.*;
+import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import org.junit.After;
@@ -45,8 +46,8 @@ public class MasterStorageTest {
     public void setUp() throws IOException {
         initMocks(this);
         LocalFsClient localFsClient = new LocalFsClient();
-        ChunkServerService csServerice = new ChunkServerService(zookeeperClient, chunkClient);
-        masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient, csServerice, masterClient);
+        Config config = new Config();
+        masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
         masterStorage.init();
     }
 
@@ -55,7 +56,7 @@ public class MasterStorageTest {
         //should not return null
         Path testPath = Paths.get("/home/testpath");
         FileDescriptor fileDescriptor = masterStorage.getFile(testPath);
-        assertTrue(fileDescriptor.path.equals(testPath));
+        assertTrue(fileDescriptor == null);
 
 
         ChunkDescriptor chunkDescriptor = new ChunkDescriptor("someChunk", new ArrayList<>());

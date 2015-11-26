@@ -9,9 +9,11 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+import java.lang.reflect.Array;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static junit.framework.Assert.assertNotSame;
 import static junit.framework.Assert.assertTrue;
@@ -39,7 +41,9 @@ public class ChunkServerServiceTest {
 
     @Test
     public void onChunkServerUpTest() throws TjfsException {
-        assertEquals(this.chunkServerService.chunkServers.size(), 0);
+        ArrayList<Machine> machines = new ArrayList<>();
+        when(zookeeperClient.getChunkServers()).thenReturn(machines);
+        assertEquals(this.chunkServerService.getChunkServers().size(), 0);
 
         Machine machine = new Machine("some ip", 5555);
         String[] listOfChunkNames = { "Hello", "World", "I", "Have", "These", "Chunks" };
@@ -50,10 +54,12 @@ public class ChunkServerServiceTest {
         when(chunkClient.list(machine2)).thenReturn(listOfChunkNames2);
 
         this.chunkServerService.onChunkServerUp(machine);
-
-        assertEquals(this.chunkServerService.chunkServers.size(), 1);
-        assertEquals(this.chunkServerService.chunkServers.get(0), machine);
-        assertNotSame(this.chunkServerService.chunkServers.get(0), machine2);
+        List<Machine> listofMachinesFromChunkServers = new ArrayList<Machine>();
+        listofMachinesFromChunkServers.add(machine);
+        when(zookeeperClient.getChunkServers()).thenReturn(listofMachinesFromChunkServers);
+        assertEquals(this.chunkServerService.getChunkServers().size(), 1);
+        assertEquals(this.chunkServerService.getChunkServers().get(0), machine);
+        assertNotSame(this.chunkServerService.getChunkServers().get(0), machine2);
 
         assertEquals(listOfChunkNames.length, chunkServerService.chunks.size());
         for(int counter = 0; counter < chunkServerService.chunks.size(); counter++){
@@ -62,10 +68,12 @@ public class ChunkServerServiceTest {
         }
 
         this.chunkServerService.onChunkServerUp(machine2);
+        listofMachinesFromChunkServers.add(machine2);
+        when(zookeeperClient.getChunkServers()).thenReturn(listofMachinesFromChunkServers);
 
-        assertEquals(this.chunkServerService.chunkServers.size(), 2);
-        assertEquals(this.chunkServerService.chunkServers.get(0), machine);
-        assertEquals(this.chunkServerService.chunkServers.get(1), machine2);
+        assertEquals(this.chunkServerService.getChunkServers().size(), 2);
+        assertEquals(this.chunkServerService.getChunkServers().get(0), machine);
+        assertEquals(this.chunkServerService.getChunkServers().get(1), machine2);
 
         assertEquals(9, chunkServerService.chunks.size());
 
@@ -78,9 +86,9 @@ public class ChunkServerServiceTest {
         this.chunkServerService.onChunkServerUp(machine);
         //all previous tests should pass
 
-        assertEquals(this.chunkServerService.chunkServers.size(), 2);
-        assertEquals(this.chunkServerService.chunkServers.get(0), machine);
-        assertEquals(this.chunkServerService.chunkServers.get(1), machine2);
+        assertEquals(this.chunkServerService.getChunkServers().size(), 2);
+        assertEquals(this.chunkServerService.getChunkServers().get(0), machine);
+        assertEquals(this.chunkServerService.getChunkServers().get(1), machine2);
 
         assertEquals(9, chunkServerService.chunks.size());
 
@@ -95,7 +103,9 @@ public class ChunkServerServiceTest {
     public void onChunkServerDownTest() throws TjfsException {
         //I need at least three chunk servers to run this test
         //Running the test in an opposite of what we did in the previous tests
-        assertEquals(this.chunkServerService.chunkServers.size(), 0);
+        ArrayList<Machine> machines = new ArrayList<>();
+        when(zookeeperClient.getChunkServers()).thenReturn(machines);
+        assertEquals(this.chunkServerService.getChunkServers().size(), 0);
 
         Machine machine = new Machine("some ip", 5555);
         String[] listOfChunkNames = { "Hello", "World", "I", "Have", "These", "Chunks" };
@@ -113,10 +123,14 @@ public class ChunkServerServiceTest {
         this.chunkServerService.onChunkServerUp(machine2);
         this.chunkServerService.onChunkServerUp(machine3);
 
-        assertEquals(this.chunkServerService.chunkServers.size(), 3);
-        assertEquals(this.chunkServerService.chunkServers.get(0), machine);
-        assertEquals(this.chunkServerService.chunkServers.get(1), machine2);
-        assertEquals(this.chunkServerService.chunkServers.get(2), machine3);
+        machines.add(machine);
+        machines.add(machine2);
+        machines.add(machine3);
+
+        assertEquals(this.chunkServerService.getChunkServers().size(), 3);
+        assertEquals(this.chunkServerService.getChunkServers().get(0), machine);
+        assertEquals(this.chunkServerService.getChunkServers().get(1), machine2);
+        assertEquals(this.chunkServerService.getChunkServers().get(2), machine3);
 
         assertEquals(10, chunkServerService.chunks.size());
 
@@ -129,10 +143,13 @@ public class ChunkServerServiceTest {
         Mockito.doThrow(new TjfsException("")).doNothing().when(chunkClient).replicateAsync(Mockito.any(Machine.class), Mockito.any(Machine.class), Mockito.any(String.class));
         this.chunkServerService.onChunkServerDown(machine2);
 
+        machines.remove(machine2);
+        when(zookeeperClient.getChunkServers()).thenReturn(machines);
         //number of chunks should be the same but the chunk server should not be there any more
         assertEquals(10, chunkServerService.chunks.size());
-        assertEquals(this.chunkServerService.chunkServers.size(), 2);
-        assertEquals((this.chunkServerService.chunkServers.contains(machine) && this.chunkServerService.chunkServers.contains(machine3)), true);
+        assertEquals(this.chunkServerService.getChunkServers().size(), 2);
+        assertEquals((this.chunkServerService.getChunkServers().contains(machine)
+                && this.chunkServerService.getChunkServers().contains(machine3)), true);
 
         System.out.println(chunkServerService.chunks.get(9).name);
         assertEquals(chunkServerService.chunks.get(0).chunkServers.size(), 2);
@@ -142,10 +159,6 @@ public class ChunkServerServiceTest {
 
     @Test
     public void updateChunkServerTest() throws TjfsException {
-        //I need at least three chunk servers to run this test
-        //Running the test in an opposite of what we did in the previous tests
-        assertEquals(this.chunkServerService.chunkServers.size(), 0);
-
         Machine machine = new Machine("some ip", 5555);
         String[] listOfChunkNames = { "Hello", "World", "I", "Have", "These", "Chunks" };
         when(chunkClient.list(machine)).thenReturn(listOfChunkNames);
