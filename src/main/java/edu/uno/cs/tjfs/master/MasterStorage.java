@@ -69,6 +69,13 @@ public class MasterStorage implements IMasterStorage{
     }
 
     @Override
+    public void deleteFile(Path path) throws TjfsException {
+        if (getFile(path) == null)
+            throw new TjfsException("File not found");
+        this.fileSystem.remove(path); //TODO: how would remove file be replicated?
+    }
+
+    @Override
     public FileDescriptor getFile(Path path){
         return this.fileSystem.get(path);
     }

@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 public interface IMasterStorage {
+    void deleteFile(Path path) throws TjfsException;
+
     FileDescriptor getFile(Path path);
     void putFile(Path path, FileDescriptor file) throws IOException, TjfsException;
     List<FileDescriptor> getLog(int startingLogID);

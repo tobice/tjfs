@@ -88,12 +88,21 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
                     return getLog((GetLogRequestArgs) request.args);
                 case LIST_FILE:
                     return listFile((ListFileRequestArgs) request.args);
+                case DELETE_FILE:
+                    return deleteFile((DeleteFileRequestArgs) request.args);
                 default:
                     throw new TjfsException("Invalid Header");
             }
         }catch (Exception e){
             throw new TjfsException(e.getMessage(), e);
         }
+    }
+
+    private Response deleteFile(DeleteFileRequestArgs args) throws TjfsException {
+        if (listFile(args.path).length > 1)
+            throw new TjfsException("Cannot delete directory");
+        storage.deleteFile(args.path);
+        return Response.Success();
     }
 
     private String[] listFile(Path path){

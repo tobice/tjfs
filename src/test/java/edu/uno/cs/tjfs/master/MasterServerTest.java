@@ -75,7 +75,7 @@ public class MasterServerTest {
                 //Give it some time so that the replication actually starts
                 Thread.sleep(config.getMasterReplicationIntervalTime() + 1000);
                 verify(masterClient).getLog(0);
-            }catch(Exception e){
+            } catch (Exception e) {
                 //do nothing
             }
         });
@@ -94,7 +94,7 @@ public class MasterServerTest {
         chunkServerService.onChunkServerUp(testMachine1);
         chunkServerService.onChunkServerUp(testMachine2);
 
-        List<Machine> machines = new ArrayList<Machine>(){{
+        List<Machine> machines = new ArrayList<Machine>() {{
             add(testMachine1);
             add(testMachine2);
         }};
@@ -102,10 +102,10 @@ public class MasterServerTest {
         when(zookeeperClient.getChunkServers()).thenReturn(machines);
 
         Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(10));
-        AllocateChunkResponseArgs args =  (AllocateChunkResponseArgs)this.masterServer.process(request).args;
+        AllocateChunkResponseArgs args = (AllocateChunkResponseArgs) this.masterServer.process(request).args;
 
         assertTrue(args.chunks.size() == 10);
-        for(ChunkDescriptor chunk : args.chunks){
+        for (ChunkDescriptor chunk : args.chunks) {
             assertTrue(chunk.chunkServers.contains(testMachine1));
             assertTrue(chunk.chunkServers.contains(testMachine2));
         }
@@ -115,7 +115,7 @@ public class MasterServerTest {
     public void processPutGetFileTest() throws TjfsException {
         this.masterServer.start();
         Path testPath = Paths.get("fs/dir1/dir2/filename");
-        ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>(){{
+        ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>() {{
             add(new ChunkDescriptor("testChunk", null));
             add(new ChunkDescriptor("testChunk2", null));
         }};
@@ -201,7 +201,7 @@ public class MasterServerTest {
     public void processListFileTest() throws TjfsException {
         this.masterServer.start();
         Path testPath = Paths.get("fs/dir1/dir2/filename");
-        ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>(){{
+        ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>() {{
             add(new ChunkDescriptor("testChunk", null));
             add(new ChunkDescriptor("testChunk2", null));
         }};
@@ -234,6 +234,76 @@ public class MasterServerTest {
         resultResponse = masterServer.process(request);
         String[] expectedResult2 = {"filename", "filename3", "filename2"};
         assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResult2)));
+    }
+
+    @Test
+    public void processDeleteFileTest() throws TjfsException {
+        this.masterServer.start();
+        Path testPath = Paths.get("fs/dir1/dir2/filename");
+
+        Request request = new Request(MCommand.DELETE_FILE, new DeleteFileRequestArgs(testPath));
+
+        exception.expect(TjfsException.class);
+        exception.expectMessage("File not found");
+        masterServer.process(request);
+
+        ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>() {{
+            add(new ChunkDescriptor("testChunk", null));
+            add(new ChunkDescriptor("testChunk2", null));
+        }};
+        FileDescriptor fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+        masterServer.process(request);
+
+        testPath = Paths.get("fs/dir1/dir2");
+        request = new Request(MCommand.DELETE_FILE, new DeleteFileRequestArgs(testPath));exception.expect(TjfsException.class);
+        exception.expect(TjfsException.class);
+        exception.expectMessage("Cannot delete directory");
+        masterServer.process(request);
+
+        testPath = Paths.get("fs/dir1/dir2/filename2");
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+        masterServer.process(request);
+
+        testPath = Paths.get("fs/dir1/dir2/filename3");
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+        masterServer.process(request);
+
+        testPath = Paths.get("fs/dir1/fileInDir1"); // this should work
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+
+        masterServer.process(request);
+
+        request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(Paths.get("fs/dir1")));
+        Response resultResponse = masterServer.process(request);
+        String[] expectedResult = {"dir2/", "fileInDir1"};
+        assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResult)));
+
+        testPath = Paths.get("fs/dir1/fileInDir1");
+        request = new Request(MCommand.DELETE_FILE, new DeleteFileRequestArgs(testPath));exception.expect(TjfsException.class);
+        masterServer.process(request);
+
+        request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(Paths.get("fs/dir1")));
+        resultResponse = masterServer.process(request);
+        String[] expectedResultAfterDelete1 = {"dir2/"};
+        assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResultAfterDelete1)));
+
+        request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(Paths.get("fs/dir1/dir2")));
+        resultResponse = masterServer.process(request);
+        String[] expectedResult2 = {"filename", "filename3", "filename2"};
+        assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResult2)));
+
+        testPath = Paths.get("fs/dir1/dir2/filename3");
+        request = new Request(MCommand.DELETE_FILE, new DeleteFileRequestArgs(testPath));exception.expect(TjfsException.class);
+        masterServer.process(request);
+
+        request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(Paths.get("fs/dir1/dir2")));
+        resultResponse = masterServer.process(request);
+        String[] expectedResultAfterDelete2 = {"filename", "filename2"};
+        assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResultAfterDelete2)));
 
     }
 }
