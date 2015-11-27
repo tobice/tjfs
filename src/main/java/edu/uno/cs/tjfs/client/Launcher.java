@@ -25,7 +25,7 @@ public class Launcher {
         boolean piped = args.length > 0 && args[0].equals("-piped");
 
         // TODO: get the Zookeeper address from the arguments
-        Machine zookeeper = Machine.fromString("127.0.0.1:2181");
+        Machine zookeeper = Machine.fromString("137.30.122.138:2181");
 
         // Instantiate the command line client
         cmdClient = CommandLineClient.getInstance(new Config(), zookeeper, System.out);

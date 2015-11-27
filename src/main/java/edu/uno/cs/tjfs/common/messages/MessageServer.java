@@ -19,7 +19,7 @@ public class MessageServer {
         try
         {
             int id = 0;
-            logger.info("MessageServer.start - ChunkServer Started and listening to the port " + port);
+            logger.info("MessageServer.start - server started and listening to the port " + port);
             while(true)
             {
                 Socket clientSocket = serverSocket.accept();

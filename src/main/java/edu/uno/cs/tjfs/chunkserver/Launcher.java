@@ -15,7 +15,7 @@ public class Launcher {
         while(true) {
             try {
                 // TODO: get these arguments from the command line
-                Machine zookeeper = Machine.fromString("127.0.0.1:2181");
+                Machine zookeeper = Machine.fromString("137.30.122.138:2181");
                 int port = 6002;
                 Path storage = Paths.get("./chunks");
 

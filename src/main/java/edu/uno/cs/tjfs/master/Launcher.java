@@ -16,15 +16,15 @@ public class Launcher {
     public static void main(String args[]){
         while(true) {
             //TODO: get these from command line
-            Machine zookeeper = Machine.fromString("127.0.0.1:2181");
-            int port = 6002;
+            Machine zookeeper = Machine.fromString("137.30.122.138:2181");
+            int port = 6003;
             Path storage = Paths.get("./fs");
 
             try {
                 MasterServer masterServer = MasterServer.getInstance(zookeeper, new Config(), port, storage);
                 MessageServer messageServer = new MessageServer(masterServer);
-                messageServer.start(port);
                 masterServer.start();
+                messageServer.start(port);
             } catch (TjfsException e) {
                 logger.error(e.getMessage(), e);
                 break;
