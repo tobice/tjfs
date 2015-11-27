@@ -125,4 +125,8 @@ public class MasterStorage implements IMasterStorage{
     private Path getFilePath(int fileName){
         return Paths.get(this.fileSystemPath.toString() + "/" + fileName);
     }
+
+    public Map<Path, FileDescriptor> getFileSystem(){
+        return fileSystem;
+    }
 }

@@ -4,20 +4,22 @@ import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.MCommand;
 import edu.uno.cs.tjfs.common.messages.Request;
-import edu.uno.cs.tjfs.common.messages.arguments.AllocateChunkResponseArgs;
-import edu.uno.cs.tjfs.common.messages.arguments.AllocateChunksRequestArgs;
-import edu.uno.cs.tjfs.common.messages.arguments.GetFileRequestArgs;
-import edu.uno.cs.tjfs.common.messages.arguments.GetFileResponseArgs;
+import edu.uno.cs.tjfs.common.messages.Response;
+import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
@@ -39,6 +41,9 @@ public class MasterServerTest {
 
     @Mock
     private IMasterClient masterClient;
+
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
 
     private ChunkServerService chunkServerService;
     private Config config;
@@ -107,12 +112,128 @@ public class MasterServerTest {
     }
 
     @Test
-    public void processGetFileTest() throws TjfsException {
+    public void processPutGetFileTest() throws TjfsException {
         this.masterServer.start();
+        Path testPath = Paths.get("fs/dir1/dir2/filename");
+        ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>(){{
+            add(new ChunkDescriptor("testChunk", null));
+            add(new ChunkDescriptor("testChunk2", null));
+        }};
+        FileDescriptor fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        Request request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
 
-        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(Paths.get("fs/testfile")));
-        GetFileResponseArgs args = (GetFileResponseArgs) this.masterServer.process(request).args;
+        masterServer.process(request);
 
-        assertTrue(args.file.path.equals(Paths.get("fs/testfile")));
+        testPath = Paths.get("fs/dir1/dir2/filename2");
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+
+        masterServer.process(request);
+        request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath));
+        Response resultResponse = masterServer.process(request);
+        assertTrue(((GetFileResponseArgs) resultResponse.args).file.equals(fileDescriptor));
+        assertTrue(((GetFileResponseArgs) resultResponse.args).file.path.equals(fileDescriptor.path));
+
+        testPath = Paths.get("fs/dir1/dir2");
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+
+        exception.expect(TjfsException.class);
+        exception.expectMessage("A directory with the same name already exists");
+        //This should throw an exception
+        masterServer.process(request);
+
+        testPath = Paths.get("fs/dir1/dir2/dir1"); // this should work
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+
+        masterServer.process(request);
+        request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath));
+        resultResponse = masterServer.process(request);
+        assertTrue(((GetFileResponseArgs) resultResponse.args).file.equals(fileDescriptor));
+        assertTrue(((GetFileResponseArgs) resultResponse.args).file.path.equals(fileDescriptor.path));
+
+    }
+
+    @Test
+    public void shouldNotFailWithExtraSlashesAtTheEnd() throws TjfsException {
+        this.masterServer.start();
+        Path testPath = Paths.get("fs/dir1/dir2/dir3///"); // this should work
+        FileDescriptor fileDescriptor = new FileDescriptor(testPath, new Date(), null);
+        Request request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+
+        masterServer.process(request);
+
+        request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath));
+        Response resultResponse = masterServer.process(request);
+
+        assertTrue(((GetFileResponseArgs) resultResponse.args).file.path.equals(fileDescriptor.path));
+    }
+
+    @Test
+    public void shouldNotFailWithExtraSlashesInTheMiddle() throws TjfsException {
+        this.masterServer.start();
+        Path testPath = Paths.get("fs/dir1////dir2////dir3///"); // this should work
+        FileDescriptor fileDescriptor = new FileDescriptor(testPath, new Date(), null);
+        Request request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+
+        masterServer.process(request);
+
+        request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath));
+        Response resultResponse = masterServer.process(request);
+
+        assertTrue(((GetFileResponseArgs) resultResponse.args).file.path.equals(Paths.get("fs/dir1/dir2/dir3")));
+    }
+
+    @Test
+    public void shouldFailWhileputtingEmptyFileName() throws TjfsException {
+        this.masterServer.start();
+        Path testPath = Paths.get("");
+        FileDescriptor fileDescriptor = new FileDescriptor(testPath, new Date(), null);
+        Request request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+
+        exception.expect(TjfsException.class);
+        exception.expectMessage("Empty file name");
+        masterServer.process(request);
+    }
+
+    @Test
+    public void processListFileTest() throws TjfsException {
+        this.masterServer.start();
+        Path testPath = Paths.get("fs/dir1/dir2/filename");
+        ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>(){{
+            add(new ChunkDescriptor("testChunk", null));
+            add(new ChunkDescriptor("testChunk2", null));
+        }};
+        FileDescriptor fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        Request request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+        masterServer.process(request);
+
+        testPath = Paths.get("fs/dir1/dir2/filename2");
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+        masterServer.process(request);
+
+        testPath = Paths.get("fs/dir1/dir2/filename3");
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+        masterServer.process(request);
+
+        testPath = Paths.get("fs/dir1/fileInDir1"); // this should work
+        fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(fileDescriptor));
+
+        masterServer.process(request);
+
+        request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(Paths.get("fs/dir1")));
+        Response resultResponse = masterServer.process(request);
+        String[] expectedResult = {"dir2/", "fileInDir1"};
+        assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResult)));
+
+        request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(Paths.get("fs/dir1/dir2")));
+        resultResponse = masterServer.process(request);
+        String[] expectedResult2 = {"filename", "filename3", "filename2"};
+        assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResult2)));
+
     }
 }

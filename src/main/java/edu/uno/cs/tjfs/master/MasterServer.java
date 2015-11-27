@@ -9,7 +9,9 @@ import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 import org.apache.log4j.Logger;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -84,12 +86,39 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
                     return putFile((PutFileRequestArgs) request.args);
                 case GET_LOG:
                     return getLog((GetLogRequestArgs) request.args);
+                case LIST_FILE:
+                    return listFile((ListFileRequestArgs) request.args);
                 default:
                     throw new TjfsException("Invalid Header");
             }
         }catch (Exception e){
             throw new TjfsException(e.getMessage(), e);
         }
+    }
+
+    private String[] listFile(Path path){
+        String prefix = path.toString();
+        if (!prefix.endsWith("/")) {
+            prefix += "/"; // normalize
+        }
+        Set<String> result = new HashSet<>();
+
+        for (Path key : storage.getFileSystem().keySet()) {
+            String s = key.toString();
+            if (s.startsWith(prefix)) {
+                s = s.replaceFirst("^" + prefix, "");
+                if (!s.contains("/")) {
+                    result.add(s);
+                } else {
+                    result.add(s.replaceAll("/.*$", "/"));
+                }
+            }
+        }
+        return result.toArray(new String[result.size()]);
+    }
+
+    private Response listFile(ListFileRequestArgs args) {
+        return Response.Success(new ListFileResponseArgs(listFile(args.path)));
     }
 
     private Response allocateChunks(AllocateChunksRequestArgs args){
@@ -107,12 +136,19 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         try{
             fileDescriptor = chunkServerService.updateChunkServers(fileDescriptor);
         }catch(TjfsException e){
-            fileDescriptor = new FileDescriptor(args.path);
+            logger.error("Updating the chunk server failed - " , e);
+            //do nothing
         }
         return Response.Success(new GetFileResponseArgs(fileDescriptor));
     }
 
     private Response putFile(PutFileRequestArgs args) throws TjfsException {
+        if (args.file.path.toString().isEmpty())
+            throw new TjfsException("Empty file name");
+        if(listFile(args.file.path).length > 0){
+            //This means empty directory would be turned into a file-->But there should not be an empty directory
+            throw new TjfsException("A directory with the same name already exists");
+        }
         this.storage.putFile(args.file.path, args.file);
         return Response.Success();
     }
