@@ -1,11 +1,9 @@
 package edu.uno.cs.tjfs.client;
 
-import edu.uno.cs.tjfs.common.BaseLogger;
 import edu.uno.cs.tjfs.common.ChunkDescriptor;
 import edu.uno.cs.tjfs.common.IChunkClient;
 import edu.uno.cs.tjfs.common.TjfsException;
 import edu.uno.cs.tjfs.common.threads.WaitingJob;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -52,7 +50,7 @@ public class GetChunkJob extends WaitingJob {
     public void runWithWaiting() {
         try {
             logger.info("Getting a chunk " + chunk.name);
-            byte[] data = IOUtils.toByteArray(chunkClient.get(chunk));
+            byte[] data = chunkClient.get(chunk);
 
             // If the previous job is not finished yet, let's wait for it.
             waitForPreviousJob();

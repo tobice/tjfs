@@ -4,11 +4,12 @@ import edu.uno.cs.tjfs.common.messages.arguments.IMessageArgs;
 import org.apache.commons.io.IOUtils;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 public class Request extends Message {
     public MCommand header;
 
-    public Request(MCommand header, IMessageArgs args, InputStream data, int dataLength){
+    public Request(MCommand header, IMessageArgs args, byte[] data, int dataLength){
         this.header = header;
         this.args = args;
         this.data = data;
@@ -28,12 +29,9 @@ public class Request extends Message {
             return false;
         Request otherRequest = (Request) object;
         boolean sameHeaderAndDataLength =
-                this.header == otherRequest.header
-                        && this.dataLength == otherRequest.dataLength;
+                this.header == otherRequest.header && this.dataLength == otherRequest.dataLength;
         try {
-            boolean sameData = IOUtils.toString(IOUtils.toByteArray(data, dataLength), "UTF-8").equals(
-                    IOUtils.toString(IOUtils.toByteArray(otherRequest.data, otherRequest.dataLength), "UTF-8"));
-            return sameData && sameHeaderAndDataLength;
+            return Arrays.equals(data, otherRequest.data) && sameHeaderAndDataLength;
         } catch (Exception e) {
             return false;
         }

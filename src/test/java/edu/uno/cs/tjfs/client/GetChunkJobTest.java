@@ -47,9 +47,9 @@ public class GetChunkJobTest {
         GetChunkJob job2 = new GetChunkJob(chunkClient, outputStream, chunk2, 0, 3, false, job1);
         GetChunkJob job3 = new GetChunkJob(chunkClient, outputStream, chunk3, 0, 2, true, job2);
 
-        when(chunkClient.get(chunk1)).thenReturn(new ByteArrayInputStream("abc".getBytes()));
-        when(chunkClient.get(chunk2)).thenReturn(new ByteArrayInputStream("def".getBytes()));
-        when(chunkClient.get(chunk3)).thenReturn(new ByteArrayInputStream("ghi".getBytes()));
+        when(chunkClient.get(chunk1)).thenReturn("abc".getBytes());
+        when(chunkClient.get(chunk2)).thenReturn("def".getBytes());
+        when(chunkClient.get(chunk3)).thenReturn("ghi".getBytes());
 
         job1.run();
         job2.run();

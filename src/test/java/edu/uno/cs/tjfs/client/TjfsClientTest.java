@@ -88,7 +88,7 @@ public class TjfsClientTest {
         verify(zkClient).releaseFileLock(path, WRITE);
 
         // Test that the chunks have been correctly pushed using the chunk client.
-        ArgumentCaptor<InputStream> argument = ArgumentCaptor.forClass(InputStream.class);
+        ArgumentCaptor<byte[]> argument = ArgumentCaptor.forClass(byte[].class);
         verify(chunkClient, times(2)).put(anyObject(), eq(3), argument.capture());
         verify(chunkClient, times(1)).put(anyObject(), eq(2), argument.capture());
 
@@ -116,11 +116,11 @@ public class TjfsClientTest {
         config.setPipeBufferSize(2);
         masterClient.putFile(file);
 
-        when(chunkClient.get(file.getChunk(0))).thenReturn(new ByteArrayInputStream("abc".getBytes()));
-        when(chunkClient.get(file.getChunk(1))).thenReturn(new ByteArrayInputStream("def".getBytes()));
-        when(chunkClient.get(file.getChunk(2))).thenReturn(new ByteArrayInputStream("ghi".getBytes()));
-        when(chunkClient.get(file.getChunk(3))).thenReturn(new ByteArrayInputStream("jkl".getBytes()));
-        when(chunkClient.get(file.getChunk(4))).thenReturn(new ByteArrayInputStream("mn".getBytes()));
+        when(chunkClient.get(file.getChunk(0))).thenReturn("abc".getBytes());
+        when(chunkClient.get(file.getChunk(1))).thenReturn("def".getBytes());
+        when(chunkClient.get(file.getChunk(2))).thenReturn("ghi".getBytes());
+        when(chunkClient.get(file.getChunk(3))).thenReturn("jkl".getBytes());
+        when(chunkClient.get(file.getChunk(4))).thenReturn("mn".getBytes());
 
         InputStream stream = tjfsClient.get(path);
         assertThat(IOUtils.toString(stream), equalTo("abcdefghijklmn"));
@@ -140,10 +140,10 @@ public class TjfsClientTest {
         config.setChunkSize(3);
         masterClient.putFile(file);
 
-        when(chunkClient.get(file.getChunk(0))).thenReturn(new ByteArrayInputStream("abc".getBytes()));
-        when(chunkClient.get(file.getChunk(1))).thenReturn(new ByteArrayInputStream("def".getBytes()));
-        when(chunkClient.get(file.getChunk(2))).thenReturn(new ByteArrayInputStream("ghi".getBytes()));
-        when(chunkClient.get(file.getChunk(3))).thenReturn(new ByteArrayInputStream("jkl".getBytes()));
+        when(chunkClient.get(file.getChunk(0))).thenReturn("abc".getBytes());
+        when(chunkClient.get(file.getChunk(1))).thenReturn("def".getBytes());
+        when(chunkClient.get(file.getChunk(2))).thenReturn("ghi".getBytes());
+        when(chunkClient.get(file.getChunk(3))).thenReturn("jkl".getBytes());
         when(chunkClient.get(file.getChunk(4))).thenThrow(new TjfsException("Some reason"));
 
         exception.expect(IOException.class);

@@ -95,7 +95,7 @@ public class ChunkClientTest {
         if (request1.header != request2.header) return false;
         else if (request1.args.getClass() != request2.header.requestClass) return false;
         else if (request1.data != null && request2.data != null &&
-                IOUtils.toByteArray(request1.data) != IOUtils.toByteArray(request2.data)) return false;
+                !Arrays.equals(request1.data, request2.data)) return false;
         else if (request1.dataLength != request2.dataLength) return false;
         return true;
     }

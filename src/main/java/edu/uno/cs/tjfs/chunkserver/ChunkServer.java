@@ -69,8 +69,8 @@ public class ChunkServer implements IServer {
         return Response.Success(data);
     }
 
-    private Response processPutChunk(PutChunkRequestArgs args, InputStream data, int dataLength) throws IOException {
-        this.localFsClient.writeBytesToFile(getChunkPath(args.chunkName), IOUtils.toByteArray(data, dataLength));
+    private Response processPutChunk(PutChunkRequestArgs args, byte[] data, int dataLength) throws IOException {
+        this.localFsClient.writeBytesToFile(getChunkPath(args.chunkName), data);
         return Response.Success();
     }
 
@@ -86,7 +86,7 @@ public class ChunkServer implements IServer {
 
     private Response processReplicateChunk(ReplicateChunkRequestArgs args) throws IOException, TjfsException {
         byte[] data = this.localFsClient.readBytesFromFile(getChunkPath(args.chunkName));
-        this.chunkClient.put(args.machine, args.chunkName, data.length, new ByteArrayInputStream(data));
+        this.chunkClient.put(args.machine, args.chunkName, data.length, data);
         return Response.Success();
     }
 

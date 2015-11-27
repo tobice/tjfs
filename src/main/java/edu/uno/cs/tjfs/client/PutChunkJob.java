@@ -5,10 +5,6 @@ import edu.uno.cs.tjfs.common.threads.Job;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 /**
  * Job that will put a new chunk to a chunk server. If necessary, it will first download the old
  * chunk, merge with the new chunk and push the final data to a chunk server.
@@ -60,15 +56,14 @@ public class PutChunkJob extends Job {
             // overwrite it / update it with new data.
             byte[] content;
             if (oldChunk != null) {
-                byte[] oldData = IOUtils.toByteArray(chunkClient.get(oldChunk));
+                byte[] oldData = chunkClient.get(oldChunk);
                 content = Utils.mergeChunks(oldData, data, byteOffset);
             } else {
                 content = data;
             }
 
             // Push the chunk (and try to replicate it)
-            InputStream stream = new ByteArrayInputStream(content);
-            chunkClient.put(chunk, content.length, stream);
+            chunkClient.put(chunk, content.length, content);
             logger.info("The chunk " + chunk.name + " was written");
 
             // Update the file descriptor. We need to create new descriptor containing the
@@ -76,7 +71,7 @@ public class PutChunkJob extends Job {
             // can afford to call it from separate thread (plus each thread corresponds to a
             // different chunk index which means that in theory, no conflicts should happen).
             file.replaceChunk(chunk.withSizeAndNumber(content.length, index));
-        } catch (TjfsException|IOException e) {
+        } catch (TjfsException e) {
             logger.error("Putting the chunk " + chunk.name + " failed", e);
             notifyFailure(new TjfsException("Put chunk job failed. Reason: " + e.getMessage(), e));
         }

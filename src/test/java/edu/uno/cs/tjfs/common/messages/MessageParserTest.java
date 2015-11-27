@@ -40,7 +40,7 @@ public class MessageParserTest {
 
         assertTrue(request.header == MCommand.of("01"));
         assertTrue(((GetChunkRequestArgs) request.args).chunkName.equals(args.chunkName));
-        assertTrue(IOUtils.toByteArray(request.data).length == 0);
+        assertTrue(request.data.length == 0);
         assertTrue(request.dataLength == 10); //had set this to 10 for testing
 
         //testing with some data in the datastream
@@ -53,7 +53,7 @@ public class MessageParserTest {
         assertTrue(((GetChunkRequestArgs) request.args).chunkName.equals(args.chunkName));
 
         //And also the data length now should be 10
-        assertTrue(IOUtils.toByteArray(request.data).length == 10);
+        assertTrue(request.data.length == 10);
 
         //testing with the invalid header
         testMessage = "66" + String.format("%010d", jsonMessage.length()) + String.format("%010d", 10) + jsonMessage;
@@ -112,8 +112,7 @@ public class MessageParserTest {
 
         //Test with some data
         String testMessage = "someDataInTheDataStream";
-        InputStream stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
-        request = new Request(MCommand.GET_CHUNK, argsMessage, stream, testMessage.length());
+        request = new Request(MCommand.GET_CHUNK, argsMessage, testMessage.getBytes(), testMessage.length ());
 
         result = parser.toStreamFromRequest(request);
 
@@ -139,7 +138,7 @@ public class MessageParserTest {
 
         assertTrue(response.code.value.equals(MCode.SUCCESS.value));
         assertTrue(((GetChunkResponseArgs) response.args).status.equals(args.status));
-        assertTrue(IOUtils.toByteArray(response.data).length == 0);
+        assertTrue(response.data.length == 0);
         assertTrue(response.dataLength == 0); //had set this to 0 for testing
 
         //testing with some data in the datastream
@@ -154,7 +153,7 @@ public class MessageParserTest {
 
         //System.out.println(IOUtils.toByteArray(response.data).length);
         //And also the data length now should be 10
-        assertTrue(IOUtils.toByteArray(response.data).length == 10);
+        assertTrue(response.data.length == 10);
 
         //testing with the invalid header
         testMessage = "66" + String.format("%010d", jsonMessage.length()) + String.format("%010d", 10) + jsonMessage;
@@ -188,8 +187,7 @@ public class MessageParserTest {
 
         //Test with some data
         String testMessage = "someDataInTheDataStream";
-        InputStream stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
-        response = new Response(MCode.SUCCESS, argsMessage, stream, testMessage.length());
+        response = new Response(MCode.SUCCESS, argsMessage, testMessage.getBytes(), testMessage.length());
 
         result = parser.toStreamFromResponse(response);
 

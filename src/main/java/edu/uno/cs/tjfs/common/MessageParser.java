@@ -36,7 +36,7 @@ public class MessageParser {
             Gson gson = CustomGson.create();
             IMessageArgs messageArgs = (IMessageArgs) gson.fromJson(jsonMessage, command.requestClass);
             if (messageArgs == null) throw new JsonSyntaxException("");
-            result = new Request(command, messageArgs, stream, rawLength);
+            result = new Request(command, messageArgs, IOUtils.toByteArray(stream), rawLength);
         }catch (IOException e){
             throw new MessageParseException("Invalid Stream,", e);
         }catch(IllegalArgumentException e){
@@ -66,7 +66,7 @@ public class MessageParser {
                 //Create one stream from the two streams
                 List<InputStream> result = Arrays.asList(
                         stream,
-                        request.data
+                        new ByteArrayInputStream(request.data)
                 );
                 return new SequenceInputStream(Collections.enumeration(result));
             }
@@ -90,7 +90,7 @@ public class MessageParser {
 
             Gson gson = CustomGson.create();
             IMessageArgs messageArgs = jsonMessage.isEmpty() ? null : (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
-            result = new Response(code, messageArgs, new ByteArrayInputStream(IOUtils.toByteArray(stream, rawLength)), rawLength);
+            result = new Response(code, messageArgs, IOUtils.toByteArray(stream, rawLength), rawLength);
 
         }catch(IOException e){
             logger.info(e.getMessage());
@@ -119,7 +119,7 @@ public class MessageParser {
                 //Create one stream from the two streams
                 List<InputStream> result = Arrays.asList(
                         stream,
-                        response.data
+                        new ByteArrayInputStream(response.data)
                 );
                 return new SequenceInputStream(Collections.enumeration(result));
             } else {

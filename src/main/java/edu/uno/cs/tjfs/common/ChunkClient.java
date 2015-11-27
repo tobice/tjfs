@@ -2,8 +2,6 @@ package edu.uno.cs.tjfs.common;
 
 import edu.uno.cs.tjfs.common.messages.*;
 
-import java.io.InputStream;
-
 import edu.uno.cs.tjfs.common.messages.arguments.*;
 import org.apache.log4j.Logger;
 
@@ -14,29 +12,24 @@ public class ChunkClient implements IChunkClient {
         this.messageClient = messageClient;
     }
 
-    public InputStream get(Machine machine, String chunkName) throws TjfsException {
+    public byte[] get(Machine machine, String chunkName) throws TjfsException {
         Request request = new Request(MCommand.GET_CHUNK, new GetChunkRequestArgs(chunkName), null, 0);
         Response response = this.messageClient.send(machine, request);
         return response.data;
     }
 
     @Override
-    public InputStream get(ChunkDescriptor chunkDescriptor) throws TjfsException {
+    public byte[] get(ChunkDescriptor chunkDescriptor) throws TjfsException {
         if (chunkDescriptor.chunkServers.size() != 2){
             throw new TjfsException("Invalid number of chunk-severs.");
         }
-        InputStream result;
+        byte[] result;
         try{
             result = get(chunkDescriptor.chunkServers.get(0), chunkDescriptor.name);
-        }catch(Exception e){
+        } catch(Exception e){
             result = get(chunkDescriptor.chunkServers.get(1), chunkDescriptor.name);
         }
         return result;
-    }
-
-    public void put(Machine machine, String chunkName, int dataLength, InputStream data) throws TjfsException{
-        Request request = new Request(MCommand.PUT_CHUNK, new PutChunkRequestArgs(chunkName), data, dataLength);
-        this.messageClient.send(machine, request);
     }
 
     @Override
@@ -51,13 +44,18 @@ public class ChunkClient implements IChunkClient {
         this.messageClient.send(machineFrom, request);
     }
 
-    public void putAsync(Machine machine, String chunkName, int dataLength, InputStream data) throws TjfsException{
+    public void put(Machine machine, String chunkName, int dataLength, byte[] data) throws TjfsException{
+        Request request = new Request(MCommand.PUT_CHUNK, new PutChunkRequestArgs(chunkName), data, dataLength);
+        this.messageClient.send(machine, request);
+    }
+
+    public void putAsync(Machine machine, String chunkName, int dataLength, byte[] data) throws TjfsException{
         Request request = new Request(MCommand.PUT_CHUNK, new PutChunkRequestArgs(chunkName), data, dataLength);
         this.messageClient.sendAsync(machine, request);
     }
 
     @Override
-    public void put(ChunkDescriptor chunkDescriptor, int length, InputStream data) throws TjfsException {
+    public void put(ChunkDescriptor chunkDescriptor, int length, byte[] data) throws TjfsException {
         if (chunkDescriptor.chunkServers.size() != 2)
             throw new TjfsException("Invalid number of chunk-servers.");
 

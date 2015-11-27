@@ -53,9 +53,9 @@ public class PutChunkJobTest {
         // We are verifying that IChunkClient#put() has been called with proper arguments. The
         // last argument is an instance of InputStream. To compare the actual content of the stream,
         // we have to capture the argument and do the comparison manually.
-        ArgumentCaptor<InputStream> argument = ArgumentCaptor.forClass(InputStream.class);
+        ArgumentCaptor<byte[]> argument = ArgumentCaptor.forClass(byte[].class);
         verify(chunkClient).put(eq(chunk), eq(data.length), argument.capture());
-        assertThat(IOUtils.toByteArray(argument.getValue()), equalTo(data));
+        assertThat(argument.getValue(), equalTo(data));
         assertThat(file.getChunk(0).name, equalTo(chunk.name));
         assertThat(file.getChunk(0).index, equalTo(0));
         assertThat(file.getChunk(0).size, equalTo(data.length));
@@ -76,16 +76,16 @@ public class PutChunkJobTest {
         PutChunkJob job = new PutChunkJob(chunkClient, file, oldChunk, chunk, 0, data, byteOffset);
 
         // This is the content of our old chunk.
-        when(chunkClient.get(oldChunk)).thenReturn(new ByteArrayInputStream("abcdef".getBytes()));
+        when(chunkClient.get(oldChunk)).thenReturn("abcdef".getBytes());
         job.run();
 
         // The job should first load the old chunk.
         verify(chunkClient).get(oldChunk);
 
         // And then put a new chunk merged from the old one and the data.
-        ArgumentCaptor<InputStream> argument = ArgumentCaptor.forClass(InputStream.class);
+        ArgumentCaptor<byte[]> argument = ArgumentCaptor.forClass(byte[].class);
         verify(chunkClient).put(eq(chunk), eq(6), argument.capture());
-        assertThat(IOUtils.toByteArray(argument.getValue()), equalTo("abcabc".getBytes()));
+        assertThat(argument.getValue(), equalTo("abcabc".getBytes()));
         assertThat(file.getChunk(0).name, equalTo(chunk.name));
         assertThat(file.getChunk(0).index, equalTo(0));
         assertThat(file.getChunk(0).size, equalTo(6));
