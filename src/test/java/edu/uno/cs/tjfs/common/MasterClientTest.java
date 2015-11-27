@@ -1,8 +1,10 @@
 package edu.uno.cs.tjfs.common;
 
+import edu.uno.cs.tjfs.client.TjfsClientException;
 import edu.uno.cs.tjfs.common.messages.*;
 import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -110,5 +112,20 @@ public class MasterClientTest {
         verify(messageClient).send(machine, request);
         assertTrue(result.size() == 1);
         assertTrue(result.get(0).equals(fileDescriptor));
+    }
+
+    @Test
+    public void listFileTest() throws TjfsException {
+        Machine machine = new Machine("127.0.0.1", 6002);
+        Path testPath = Paths.get("testPath");
+        Request request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(testPath));
+        when(zookeeperClient.getMasterServer()).thenReturn(machine);
+        String[] testResult = {"file1", "file2"};
+        Response response = Response.Success(new ListFileResponseArgs(testResult));
+        when(messageClient.send(machine, request)).thenReturn(response);
+        String[] result = masterClient.list(testPath);
+        verify(messageClient).send(machine, request);
+        assertTrue(result.length == 2);
+        assertTrue(testResult.equals(result));
     }
 }

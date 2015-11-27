@@ -55,6 +55,8 @@ public class MasterClient implements IMasterClient {
 
     @Override
     public String[] list(Path path) throws TjfsException {
-        return new String[0];
+        Request request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(path));
+        Response response = this.messageClient.send(getMasterServer(), request);
+        return ((ListFileResponseArgs) response.args).files;
     }
 }
