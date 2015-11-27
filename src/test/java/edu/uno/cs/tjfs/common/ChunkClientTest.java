@@ -64,7 +64,7 @@ public class ChunkClientTest {
             assertTrue(checkMachineEquality(machineCaptor.getAllValues().get(0), testMachine1));
             assertTrue(checkMachineEquality(machineCaptor.getAllValues().get(1), testMachine2));
 
-            Request expectedRequest = new Request(MCommand.GET_CHUNK, new GetChunkRequestArgs("0"), null, 0);
+            Request expectedRequest = new Request(MCommand.GET_CHUNK, new GetChunkRequestArgs("0"));
 
             assertTrue(checkRequestEquality(requestCaptor.getAllValues().get(0), expectedRequest));
             assertTrue(checkRequestEquality(requestCaptor.getAllValues().get(1), expectedRequest));
@@ -84,7 +84,7 @@ public class ChunkClientTest {
             assertTrue(checkMachineEquality(machineCaptor.getAllValues().get(0), testMachine1));
             assertTrue(checkMachineEquality(machineCaptor.getAllValues().get(1), testMachine2));
 
-            Request expectedRequest = new Request(MCommand.GET_CHUNK, new GetChunkRequestArgs("0"), null, 0);
+            Request expectedRequest = new Request(MCommand.GET_CHUNK, new GetChunkRequestArgs("0"));
 
             assertTrue(checkRequestEquality(requestCaptor.getAllValues().get(0), expectedRequest));
             assertTrue(checkRequestEquality(requestCaptor.getAllValues().get(1), expectedRequest));

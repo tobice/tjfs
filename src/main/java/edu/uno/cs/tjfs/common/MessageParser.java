@@ -36,7 +36,7 @@ public class MessageParser {
             Gson gson = CustomGson.create();
             IMessageArgs messageArgs = (IMessageArgs) gson.fromJson(jsonMessage, command.requestClass);
             if (messageArgs == null) throw new JsonSyntaxException("");
-            result = new Request(command, messageArgs, IOUtils.toByteArray(stream), rawLength);
+            result = new Request(command, messageArgs, IOUtils.toByteArray(stream, rawLength));
         }catch (IOException e){
             throw new MessageParseException("Invalid Stream,", e);
         }catch(IllegalArgumentException e){
@@ -90,7 +90,7 @@ public class MessageParser {
 
             Gson gson = CustomGson.create();
             IMessageArgs messageArgs = jsonMessage.isEmpty() ? null : (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
-            result = new Response(code, messageArgs, IOUtils.toByteArray(stream, rawLength), rawLength);
+            result = new Response(code, messageArgs, IOUtils.toByteArray(stream, rawLength));
 
         }catch(IOException e){
             logger.info(e.getMessage());

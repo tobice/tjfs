@@ -88,20 +88,9 @@ public class TjfsClientTest {
         verify(zkClient).releaseFileLock(path, WRITE);
 
         // Test that the chunks have been correctly pushed using the chunk client.
-        ArgumentCaptor<byte[]> argument = ArgumentCaptor.forClass(byte[].class);
-        verify(chunkClient, times(2)).put(anyObject(), eq(3), argument.capture());
-        verify(chunkClient, times(1)).put(anyObject(), eq(2), argument.capture());
-
-        // The order of individual IChunkClient#put calls is arbitrary. So we capture all written
-        // data and order it alphabetically to get a predictable order that we can assert.
-        String[] result = new String[3];
-        for (int i = 0; i < 3; i++) {
-            result[i] = IOUtils.toString(argument.getAllValues().get(i));
-        }
-        Arrays.sort(result);
-        assertThat(result[0], equalTo("abc"));
-        assertThat(result[1], equalTo("def"));
-        assertThat(result[2], equalTo("gh"));
+        verify(chunkClient).put(anyObject(), eq("abc".getBytes()));
+        verify(chunkClient).put(anyObject(), eq("def".getBytes()));
+        verify(chunkClient).put(anyObject(), eq("gh".getBytes()));
     }
 
     @Test

@@ -4,28 +4,31 @@ import edu.uno.cs.tjfs.common.messages.arguments.ErrorResponseArgs;
 import edu.uno.cs.tjfs.common.messages.arguments.IMessageArgs;
 
 public class Response extends Message{
-    public MCode code;
+    public final MCode code;
 
-    public Response (MCode code, IMessageArgs args, byte[] data, int dataLength){
+    public Response(MCode code, IMessageArgs args, byte[] data){
+        super(args, data);
         this.code = code;
-        this.args = args;
-        this.data = data;
-        this.dataLength = dataLength;
     }
 
-    public static Response Success(){
-        return new Response(MCode.SUCCESS, null, null, 0);
+    public Response(MCode code, IMessageArgs args) {
+        super(args);
+        this.code = code;
+    }
+
+    public static Response Success() {
+        return new Response(MCode.SUCCESS, null);
     }
 
     public static Response Error(String status){
-        return new Response(MCode.ERROR, new ErrorResponseArgs(status), null, 0);
+        return new Response(MCode.ERROR, new ErrorResponseArgs(status));
     }
 
     public static Response Success(byte[] data){
-        return new Response(MCode.SUCCESS, null, data, data.length);
+        return new Response(MCode.SUCCESS, null, data);
     }
 
     public static Response Success(IMessageArgs args){
-        return new Response(MCode.SUCCESS, args, null, 0);
+        return new Response(MCode.SUCCESS, args);
     }
 }

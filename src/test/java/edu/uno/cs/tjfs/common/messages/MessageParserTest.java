@@ -32,7 +32,7 @@ public class MessageParserTest {
         String jsonMessage = gson.toJson(args);
 
         //Testing with no data stream
-        String testMessage = "01" + String.format("%010d", jsonMessage.length()) + String.format("%010d", 10) + jsonMessage;
+        String testMessage = "01" + String.format("%010d", jsonMessage.length()) + String.format("%010d", 0) + jsonMessage;
 
         MessageParser parser = new MessageParser();
         InputStream stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
@@ -41,10 +41,11 @@ public class MessageParserTest {
         assertTrue(request.header == MCommand.of("01"));
         assertTrue(((GetChunkRequestArgs) request.args).chunkName.equals(args.chunkName));
         assertTrue(request.data.length == 0);
-        assertTrue(request.dataLength == 10); //had set this to 10 for testing
+        assertTrue(request.dataLength == 0);
 
         //testing with some data in the datastream
-        testMessage += "0000000000";
+        testMessage = "01" + String.format("%010d", jsonMessage.length()) + String.format
+                ("%010d", 10) + jsonMessage + "0000000000";
         stream = IOUtils.toInputStream(testMessage, StandardCharsets.UTF_8);
         request = parser.fromStream(stream);
 
@@ -97,7 +98,7 @@ public class MessageParserTest {
         String jsonMessage = gson.toJson(argsMessage);
 
         //Test with no data
-        Request request = new Request(MCommand.GET_CHUNK, argsMessage, null, 0);
+        Request request = new Request(MCommand.GET_CHUNK, argsMessage);
 
         MessageParser parser = new MessageParser();
         InputStream result = parser.toStreamFromRequest(request);
@@ -112,7 +113,7 @@ public class MessageParserTest {
 
         //Test with some data
         String testMessage = "someDataInTheDataStream";
-        request = new Request(MCommand.GET_CHUNK, argsMessage, testMessage.getBytes(), testMessage.length ());
+        request = new Request(MCommand.GET_CHUNK, argsMessage, testMessage.getBytes());
 
         result = parser.toStreamFromRequest(request);
 
@@ -172,7 +173,7 @@ public class MessageParserTest {
         String jsonMessage = gson.toJson(argsMessage);
 
         //Test with no data
-        Response response = new Response(MCode.SUCCESS, argsMessage, null, 0);
+        Response response = new Response(MCode.SUCCESS, argsMessage);
 
         MessageParser parser = new MessageParser();
         InputStream result = parser.toStreamFromResponse(response);
@@ -187,7 +188,7 @@ public class MessageParserTest {
 
         //Test with some data
         String testMessage = "someDataInTheDataStream";
-        response = new Response(MCode.SUCCESS, argsMessage, testMessage.getBytes(), testMessage.length());
+        response = new Response(MCode.SUCCESS, argsMessage, testMessage.getBytes());
 
         result = parser.toStreamFromResponse(response);
 

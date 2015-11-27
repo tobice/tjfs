@@ -7,20 +7,16 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 public class Request extends Message {
-    public MCommand header;
+    public final MCommand header;
 
-    public Request(MCommand header, IMessageArgs args, byte[] data, int dataLength){
+    public Request(MCommand header, IMessageArgs args, byte[] data){
+        super(args, data);
         this.header = header;
-        this.args = args;
-        this.data = data;
-        this.dataLength = dataLength;
     }
 
     public Request(MCommand header, IMessageArgs args){
+        super(args);
         this.header = header;
-        this.args = args;
-        this.data = null;
-        this.dataLength = 0;
     }
 
     @Override

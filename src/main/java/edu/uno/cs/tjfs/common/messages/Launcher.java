@@ -31,7 +31,7 @@ public class Launcher {
             ChunkDescriptor chunkDescriptor = new ChunkDescriptor("2", machines, data.length, 1);
 
 
-            chunkClient.put(chunkDescriptor, data.length, data);
+            chunkClient.put(chunkDescriptor, data);
             String test = IOUtils.toString(chunkClient.get(chunkDescriptor), "UTF-8");
             System.out.println("file is " + test);
         }catch(Exception e){

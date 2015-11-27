@@ -63,7 +63,7 @@ public class PutChunkJob extends Job {
             }
 
             // Push the chunk (and try to replicate it)
-            chunkClient.put(chunk, content.length, content);
+            chunkClient.put(chunk, content);
             logger.info("The chunk " + chunk.name + " was written");
 
             // Update the file descriptor. We need to create new descriptor containing the

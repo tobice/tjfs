@@ -96,7 +96,7 @@ public class MasterServerTest {
 
         when(zookeeperClient.getChunkServers()).thenReturn(machines);
 
-        Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(10), null, 0);
+        Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(10));
         AllocateChunkResponseArgs args =  (AllocateChunkResponseArgs)this.masterServer.process(request).args;
 
         assertTrue(args.chunks.size() == 10);
@@ -110,7 +110,7 @@ public class MasterServerTest {
     public void processGetFileTest() throws TjfsException {
         this.masterServer.start();
 
-        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(Paths.get("fs/testfile")), null, 0);
+        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(Paths.get("fs/testfile")));
         GetFileResponseArgs args = (GetFileResponseArgs) this.masterServer.process(request).args;
 
         assertTrue(args.file.path.equals(Paths.get("fs/testfile")));

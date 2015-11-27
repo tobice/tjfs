@@ -38,7 +38,7 @@ public class MasterClientTest {
     public void allocateChunkTest() throws TjfsException {
         Machine machine = new Machine("127.0.0.1", 6002);
         when(zookeeperClient.getMasterServer()).thenReturn(machine);
-        Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(10), null, 0);
+        Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(10));
         ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>(){{
             add(new ChunkDescriptor("testChunk", null));
             add(new ChunkDescriptor("testChunk2", null));
@@ -56,7 +56,7 @@ public class MasterClientTest {
     public void getFile() throws TjfsException {
         Machine machine = new Machine("127.0.0.1", 6002);
         Path testPath = Paths.get("testPath");
-        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath), null, 0);
+        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath));
         when(zookeeperClient.getMasterServer()).thenReturn(machine);
         ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>(){{
             add(new ChunkDescriptor("testChunk", null));

@@ -28,21 +28,21 @@ public class MasterClient implements IMasterClient {
 
     @Override
     public List<ChunkDescriptor> allocateChunks(int number) throws TjfsException {
-        Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(number), null, 0);
+        Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(number));
         Response response = this.messageClient.send(getMasterServer(), request);
         return ((AllocateChunkResponseArgs) response.args).chunks;
     }
 
     @Override
     public FileDescriptor getFile(Path path) throws TjfsException {
-        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(path), null, 0);
+        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(path));
         Response response = this.messageClient.send(getMasterServer(), request);
         return ((GetFileResponseArgs) response.args).file;
     }
 
     @Override
     public void putFile(FileDescriptor file) throws TjfsException {
-        Request request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(file), null, 0);
+        Request request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(file));
         this.messageClient.send(getMasterServer(), request);
     }
 

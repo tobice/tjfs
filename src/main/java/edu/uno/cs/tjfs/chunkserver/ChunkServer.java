@@ -49,7 +49,7 @@ public class ChunkServer implements IServer {
                 case GET_CHUNK:
                     return processGetChunk((GetChunkRequestArgs)request.args);
                 case PUT_CHUNK:
-                    return processPutChunk((PutChunkRequestArgs)request.args, request.data, request.dataLength);
+                    return processPutChunk((PutChunkRequestArgs)request.args, request.data);
                 case LIST_CHUNK:
                     return processListChunk();
                 case DELETE_CHUNK:
@@ -69,14 +69,14 @@ public class ChunkServer implements IServer {
         return Response.Success(data);
     }
 
-    private Response processPutChunk(PutChunkRequestArgs args, byte[] data, int dataLength) throws IOException {
+    private Response processPutChunk(PutChunkRequestArgs args, byte[] data) throws IOException {
         this.localFsClient.writeBytesToFile(getChunkPath(args.chunkName), data);
         return Response.Success();
     }
 
     private Response processListChunk() {
         String[] listOfFiles = this.localFsClient.listFiles(this.fileSystem);
-        return new Response(MCode.SUCCESS, new ListChunkResponseArgs(listOfFiles), null, 0);
+        return new Response(MCode.SUCCESS, new ListChunkResponseArgs(listOfFiles));
     }
 
     private Response processDeleteChunk(DeleteChunkRequestArgs args) throws IOException {
@@ -86,7 +86,7 @@ public class ChunkServer implements IServer {
 
     private Response processReplicateChunk(ReplicateChunkRequestArgs args) throws IOException, TjfsException {
         byte[] data = this.localFsClient.readBytesFromFile(getChunkPath(args.chunkName));
-        this.chunkClient.put(args.machine, args.chunkName, data.length, data);
+        this.chunkClient.put(args.machine, args.chunkName, data);
         return Response.Success();
     }
 

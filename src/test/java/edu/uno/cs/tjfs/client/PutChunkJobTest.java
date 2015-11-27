@@ -54,7 +54,7 @@ public class PutChunkJobTest {
         // last argument is an instance of InputStream. To compare the actual content of the stream,
         // we have to capture the argument and do the comparison manually.
         ArgumentCaptor<byte[]> argument = ArgumentCaptor.forClass(byte[].class);
-        verify(chunkClient).put(eq(chunk), eq(data.length), argument.capture());
+        verify(chunkClient).put(eq(chunk), argument.capture());
         assertThat(argument.getValue(), equalTo(data));
         assertThat(file.getChunk(0).name, equalTo(chunk.name));
         assertThat(file.getChunk(0).index, equalTo(0));
@@ -84,7 +84,7 @@ public class PutChunkJobTest {
 
         // And then put a new chunk merged from the old one and the data.
         ArgumentCaptor<byte[]> argument = ArgumentCaptor.forClass(byte[].class);
-        verify(chunkClient).put(eq(chunk), eq(6), argument.capture());
+        verify(chunkClient).put(eq(chunk), argument.capture());
         assertThat(argument.getValue(), equalTo("abcabc".getBytes()));
         assertThat(file.getChunk(0).name, equalTo(chunk.name));
         assertThat(file.getChunk(0).index, equalTo(0));
