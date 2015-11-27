@@ -9,7 +9,7 @@ public enum MCommand {
     GET_CHUNK("01", GetChunkRequestArgs.class, GetChunkResponseArgs.class),
     PUT_CHUNK("02", PutChunkRequestArgs.class, PutChunkResponseArgs.class),
     DELETE_CHUNK("03", DeleteChunkRequestArgs.class, DeleteChunkResponseArgs.class),
-    LIST_CHUNK("04", ListChunkRequestArgs.class, DeleteChunkResponseArgs.class),
+    LIST_CHUNK("04", ListChunkRequestArgs.class, ListChunkResponseArgs.class),
     REPLICATE_CHUNK("05", ReplicateChunkRequestArgs.class, null),
     GET_FILE("06", GetFileRequestArgs.class, GetFileResponseArgs.class),
     PUT_FILE("07", PutFileRequestArgs.class, PutFileResponseArgs.class),
