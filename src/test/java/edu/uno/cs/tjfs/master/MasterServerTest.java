@@ -49,21 +49,26 @@ public class MasterServerTest {
     private Config config;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException, TjfsException {
         initMocks(this);
         LocalFsClient localFsClient = new LocalFsClient();
         config = new Config();
         chunkServerService = new ChunkServerService(zookeeperClient, chunkClient);
         MasterStorage masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
-        this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient, config);
+        Machine zookeeper = Machine.fromString("127.0.0.1:2181");
+        int port = 6002;
+        Machine thisMachine = new Machine(IpDetect.getLocalIp(zookeeper.ip), port);
+        this.masterServer = new MasterServer(masterStorage, chunkServerService, zookeeperClient, thisMachine);
     }
 
     @Test
     public void startTest() throws TjfsException {
         //should try to register as the client
-        Machine machine = new Machine(config.getCurrentIPAddress(), config.getMasterPort());
+        Machine zookeeper = Machine.fromString("127.0.0.1:2181");
+        int port = 6002;
+        Machine thisMachine = new Machine(IpDetect.getLocalIp(zookeeper.ip), port);
         this.masterServer.start();
-        verify(zookeeperClient).registerMasterServer(machine);
+        verify(zookeeperClient).registerMasterServer(thisMachine);
     }
 
     @Test

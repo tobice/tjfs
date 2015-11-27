@@ -2,10 +2,12 @@ package edu.uno.cs.tjfs.master;
 
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.messages.MessageClient;
 import edu.uno.cs.tjfs.common.messages.Request;
 import edu.uno.cs.tjfs.common.messages.Response;
 import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 import org.apache.log4j.Logger;
 
@@ -20,16 +22,16 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     private MasterStorage storage;
     private ChunkServerService chunkServerService;
     private IZookeeperClient zkClient;
-    private Config config;
     private boolean amIShadow = true;
     final static Logger logger = Logger.getLogger(MasterServer.class);
+    private Machine me;
 
     public MasterServer(MasterStorage storage, ChunkServerService chunkServerService,
-                        IZookeeperClient zkClient, Config config) {
+                        IZookeeperClient zkClient, Machine me) {
         this.storage = storage;
         this.chunkServerService = chunkServerService;
         this.zkClient = zkClient;
-        this.config = config;
+        this.me = me;
     }
 
     public void start() {
@@ -44,16 +46,12 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
 
     private void attemptToBecomeMaster() {
         try {
-            Machine me = new Machine(config.getCurrentIPAddress(), config.getMasterPort());
             this.zkClient.registerMasterServer(me);
             becomeMaster();
         } catch (ZookeeperException.MasterAlreadyExistsException e) {
             becomeShadow();
-        } catch (ZookeeperException e) {
-            //throw e; -> This requires api change
-            // TODO: totally fail
-        } catch(TjfsException e){
-            //TODO: fail too
+        } catch (ZookeeperException e){
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -174,7 +172,20 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         if (amIShadow()) {
             attemptToBecomeMaster();
         } else {
-            logger.error("MasterServer.onMasterServerDown - listening to its own down event.");
+            logger.error("Listening to its own down event.");
         }
+    }
+
+    public static MasterServer getInstance(Machine zookeeper, Config config, int port, Path storage) throws TjfsException {
+        LocalFsClient localFsClient = new LocalFsClient();
+        MessageClient messageClient = new MessageClient();
+        ChunkClient chunkClient = new ChunkClient(messageClient);
+        IZookeeperClient zClient = ZookeeperClient.connect(zookeeper, config.getZookeeperSessionTimeout());
+        ChunkServerService chunkServerService = new ChunkServerService(zClient, chunkClient);
+        MasterClient masterClient = new MasterClient(messageClient, zClient);
+        MasterStorage masterStorage = new MasterStorage(
+                storage, localFsClient, masterClient, config.getMasterReplicationIntervalTime());
+        Machine me = new Machine(IpDetect.getLocalIp(zookeeper.ip), port);
+        return new MasterServer(masterStorage, chunkServerService, zClient, me);
     }
 }

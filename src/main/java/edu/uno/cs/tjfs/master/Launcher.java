@@ -1,26 +1,36 @@
 package edu.uno.cs.tjfs.master;
 
 import edu.uno.cs.tjfs.Config;
-import edu.uno.cs.tjfs.common.ChunkClient;
-import edu.uno.cs.tjfs.common.LocalFsClient;
-import edu.uno.cs.tjfs.common.MasterClient;
+import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.MessageClient;
+import edu.uno.cs.tjfs.common.messages.MessageServer;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Launcher {
-    public static void main(String args[]) throws Exception{
-        Config config = new Config();
-        LocalFsClient localFsClient = new LocalFsClient();
-        MessageClient messageClient = new MessageClient();
-        ChunkClient chunkClient = new ChunkClient(messageClient);
-        IZookeeperClient zClient = null;
-        ChunkServerService chunkServerService = new ChunkServerService(zClient, chunkClient);
-        MasterClient masterClient = new MasterClient(messageClient, zClient);
+    final static Logger logger = BaseLogger.getLogger(Launcher.class);
+    public static void main(String args[]){
+        while(true) {
+            //TODO: get these from command line
+            Machine zookeeper = Machine.fromString("127.0.0.1:2181");
+            int port = 6002;
+            Path storage = Paths.get("./fs");
 
-        MasterStorage masterStorage = new MasterStorage(
-                config.getMasterStoragePath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
-
-        MasterServer masterServer = new MasterServer(masterStorage, chunkServerService, zClient, config);
-        masterServer.start();
+            try {
+                MasterServer masterServer = MasterServer.getInstance(zookeeper, new Config(), port, storage);
+                MessageServer messageServer = new MessageServer(masterServer);
+                messageServer.start(port);
+                masterServer.start();
+            } catch (TjfsException e) {
+                logger.error(e.getMessage(), e);
+                break;
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
     }
 }
