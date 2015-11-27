@@ -3,6 +3,7 @@ package edu.uno.cs.tjfs.common;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import edu.uno.cs.tjfs.common.messages.*;
+import edu.uno.cs.tjfs.common.messages.arguments.ErrorResponseArgs;
 import edu.uno.cs.tjfs.common.messages.arguments.IMessageArgs;
 import edu.uno.cs.tjfs.common.messages.MCode;
 import org.apache.commons.io.IOUtils;
@@ -89,7 +90,10 @@ public class MessageParser {
             MCode code = MCode.of(header);
 
             Gson gson = CustomGson.create();
-            IMessageArgs messageArgs = jsonMessage.isEmpty() ? null : (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
+            IMessageArgs messageArgs = jsonMessage.isEmpty() ? null :
+                code == MCode.ERROR ?
+                    (IMessageArgs) gson.fromJson(jsonMessage, ErrorResponseArgs.class) :
+                    (IMessageArgs) gson.fromJson(jsonMessage, responseArgsClass);
             result = new Response(code, messageArgs, IOUtils.toByteArray(stream, rawLength));
 
         }catch(IOException e){
