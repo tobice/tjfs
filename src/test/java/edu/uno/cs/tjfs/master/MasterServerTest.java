@@ -112,6 +112,27 @@ public class MasterServerTest {
     }
 
     @Test
+    public void getFileWithDirectoryPathShouldFail() throws TjfsException {
+        this.masterServer.start();
+        Path testPath = Paths.get("fs/dir1/dir2/filename");
+        Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath));
+        Response response = masterServer.process(request);
+
+        assertTrue(((GetFileResponseArgs)response.args).file.path.equals(testPath));
+
+        request = new Request(MCommand.PUT_FILE, new PutFileRequestArgs(new FileDescriptor(testPath, new Date(), null)));
+        masterServer.process(request);
+
+        //now cannot getfile with a directory path
+        testPath = Paths.get("fs/dir1/dir2");
+        request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath));
+
+        exception.expect(TjfsException.class);
+        exception.expectMessage("Cannot get a directory");
+        masterServer.process(request);
+    }
+
+    @Test
     public void processPutGetFileTest() throws TjfsException {
         this.masterServer.start();
         Path testPath = Paths.get("fs/dir1/dir2/filename");
@@ -304,6 +325,5 @@ public class MasterServerTest {
         resultResponse = masterServer.process(request);
         String[] expectedResultAfterDelete2 = {"filename", "filename2"};
         assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResultAfterDelete2)));
-
     }
 }

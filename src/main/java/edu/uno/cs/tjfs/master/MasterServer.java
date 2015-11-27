@@ -139,7 +139,9 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         return Response.Success(new AllocateChunkResponseArgs(result));
     }
 
-    private Response getFile(GetFileRequestArgs args){
+    private Response getFile(GetFileRequestArgs args) throws TjfsException {
+        if (listFile(args.path).length > 0)
+            throw new TjfsException("Cannot get a directory");
         FileDescriptor fileDescriptor = this.storage.getFile(args.path);
         fileDescriptor = fileDescriptor == null ? new FileDescriptor(args.path) : fileDescriptor;
         try{
