@@ -72,6 +72,11 @@ public class DummyMasterClient implements IMasterClient {
         return result.toArray(new String[result.size()]);
     }
 
+    @Override
+    public void delete(Path path) throws TjfsException {
+
+    }
+
     private List<Machine> getRandomChunkServers(int number) {
         Collections.shuffle(chunkServers);
         return new LinkedList<>(chunkServers.subList(0, number));

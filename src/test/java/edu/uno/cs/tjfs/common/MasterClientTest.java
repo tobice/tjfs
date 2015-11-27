@@ -37,7 +37,7 @@ public class MasterClientTest {
     }
 
     @Test
-    public void allocateChunkTest() throws TjfsException {
+    public void allocateChunkShouldCallMessageClientTest() throws TjfsException {
         Machine machine = new Machine("127.0.0.1", 6002);
         when(zookeeperClient.getMasterServer()).thenReturn(machine);
         Request request = new Request(MCommand.ALLOCATE_CHUNKS, new AllocateChunksRequestArgs(10));
@@ -55,7 +55,7 @@ public class MasterClientTest {
     }
 
     @Test
-    public void getFile() throws TjfsException {
+    public void getFileShouldCallMessageClientTest() throws TjfsException {
         Machine machine = new Machine("127.0.0.1", 6002);
         Path testPath = Paths.get("testPath");
         Request request = new Request(MCommand.GET_FILE, new GetFileRequestArgs(testPath));
@@ -74,7 +74,7 @@ public class MasterClientTest {
     }
 
     @Test
-    public void putFileTest() throws TjfsException {
+    public void putFileShouldCallMessageClientTest() throws TjfsException {
         Machine machine = new Machine("127.0.0.1", 6002);
         Path testPath = Paths.get("testPath");
         ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>(){{
@@ -92,7 +92,7 @@ public class MasterClientTest {
     }
 
     @Test
-    public void getLogTest() throws TjfsException {
+    public void getLogShouldCallMessageClientTest() throws TjfsException {
         Machine machine = new Machine("127.0.0.1", 6002);
         Path testPath = Paths.get("testPath");
         ArrayList<ChunkDescriptor> chunks = new ArrayList<ChunkDescriptor>(){{
@@ -115,7 +115,7 @@ public class MasterClientTest {
     }
 
     @Test
-    public void listFileTest() throws TjfsException {
+    public void listFileShouldCallMessageClientTest() throws TjfsException {
         Machine machine = new Machine("127.0.0.1", 6002);
         Path testPath = Paths.get("testPath");
         Request request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(testPath));
@@ -127,5 +127,17 @@ public class MasterClientTest {
         verify(messageClient).send(machine, request);
         assertTrue(result.length == 2);
         assertTrue(testResult.equals(result));
+    }
+
+    @Test
+    public void deleteFileShouldCallMessageClientTest() throws TjfsException{
+        Machine machine = new Machine("127.0.0.1", 6002);
+        Path testPath = Paths.get("testPath");
+        Request request = new Request(MCommand.DELETE_FILE, new ListFileRequestArgs(testPath));
+        when(zookeeperClient.getMasterServer()).thenReturn(machine);
+        Response response = Response.Success(new ErrorResponseArgs(""));
+        when(messageClient.send(machine, request)).thenReturn(response);
+        masterClient.delete(testPath);
+        verify(messageClient).send(machine, request);
     }
 }

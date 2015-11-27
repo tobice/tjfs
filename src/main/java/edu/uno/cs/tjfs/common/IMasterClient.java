@@ -45,4 +45,11 @@ public interface IMasterClient {
      * @return list file and directory names. Folders end with a slash (/)
      */
     String[] list(Path path) throws TjfsException;
+
+    /**
+     * Deletes the file with the given path. If the path is a directory throws an exception.
+     * @param path file path
+     * @throws TjfsException if the path doesn't exist or the path is a directory
+     */
+    void delete(Path path) throws TjfsException;
 }

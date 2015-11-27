@@ -16,7 +16,8 @@ public enum MCommand {
     ALLOCATE_CHUNKS("08", AllocateChunksRequestArgs.class, AllocateChunkResponseArgs.class),
     GET_LOG("09", GetLogRequestArgs.class, GetLogResponseArgs.class),
     REPLICATE_CHUNK_SYNC("10", ReplicateChunkRequestArgs.class, ErrorResponseArgs.class),
-    LIST_FILE("11", ListFileRequestArgs.class, ListFileResponseArgs.class);
+    LIST_FILE("11", ListFileRequestArgs.class, ListFileResponseArgs.class),
+    DELETE_FILE("12", DeleteFileRequestArgs.class, ErrorResponseArgs.class);//lazy using the same old classes
 
     public String value;
     public Class requestClass;

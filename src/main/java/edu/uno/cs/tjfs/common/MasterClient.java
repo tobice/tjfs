@@ -59,4 +59,10 @@ public class MasterClient implements IMasterClient {
         Response response = this.messageClient.send(getMasterServer(), request);
         return ((ListFileResponseArgs) response.args).files;
     }
+
+    @Override
+    public void delete(Path path) throws TjfsException {
+        Request request = new Request(MCommand.DELETE_FILE, new DeleteFileRequestArgs(path));
+        this.messageClient.send(getMasterServer(), request);
+    }
 }
