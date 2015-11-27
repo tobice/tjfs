@@ -11,13 +11,17 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-public class ChunkServerService implements IZookeeperClient.IChunkServerUpListener,
-        IZookeeperClient.IChunkServerDownListener {
+public class ChunkServerService implements IZookeeperClient.IChunkServerUpListener, IZookeeperClient.IChunkServerDownListener {
+    final static Logger logger = BaseLogger.getLogger(ChunkServerService.class);
+
     IZookeeperClient zkClient;
     IChunkClient chunkClient;
+
     /** The up-to-date chunk descriptors with running chunk servers */
     Map<String, ChunkDescriptor> chunks;
-    final static Logger logger = BaseLogger.getLogger(ChunkServerService.class);
+
+    /** Whether or not should the service keep in sync with the chunk servers */
+    boolean synchronization = false;
 
     public ChunkServerService(IZookeeperClient zkClient, IChunkClient chunkClient) {
         this.zkClient = zkClient;
@@ -25,10 +29,11 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         this.chunks = new HashMap<>();
     }
 
-    public void start() throws ZookeeperException {
-        zkClient.addOnChunkServerDownListener(this);
-        zkClient.addOnChunkServerUpListener(this);
+    public void startSynchronization() {
+        synchronization = true;
+
         // For each chunk server, get chunks and add them to mappings
+        chunks = new HashMap<>();
         for(Machine machine : zkClient.getChunkServers()){
             try {
                 updateChunkMappingsFromMachine(machine);
@@ -38,8 +43,21 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         }
     }
 
+    public void stopSynchronization() {
+        synchronization = false;
+    }
+
+    public void start() throws ZookeeperException {
+        zkClient.addOnChunkServerDownListener(this);
+        zkClient.addOnChunkServerUpListener(this);
+    }
+
     @Override
     public void onChunkServerDown(Machine machine) {
+        if (!synchronization) {
+            return;
+        }
+
         try {
             // Replicate chunks so that there are two copies of each on different servers.
             List<ReplicateChunkJob> jobs = generateReplicateJobs(machine);
@@ -53,6 +71,10 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
 
     @Override
     public void onChunkServerUp(Machine machine) {
+        if (!synchronization) {
+            return;
+        }
+
         try {
             updateChunkMappingsFromMachine(machine);
         } catch(Exception e){

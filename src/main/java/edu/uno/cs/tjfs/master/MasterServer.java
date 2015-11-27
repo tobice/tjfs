@@ -58,11 +58,13 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     private void becomeMaster() {
         amIShadow = false;
         storage.stopReplication();
+        chunkServerService.startSynchronization();
     }
 
     protected void becomeShadow() {
         amIShadow = true;
         storage.startReplication();
+        chunkServerService.stopSynchronization();
     }
 
     @Override

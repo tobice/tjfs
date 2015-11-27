@@ -47,6 +47,8 @@ public class ChunkServerServiceTest {
 
     @Test
     public void onChunkServerUpTest() throws TjfsException {
+        chunkServerService.synchronization = true;
+
         ArrayList<Machine> machines = new ArrayList<>();
         when(zookeeperClient.getChunkServers()).thenReturn(machines);
         assertEquals(this.chunkServerService.getChunkServers().size(), 0);
@@ -123,6 +125,7 @@ public class ChunkServerServiceTest {
         chunkServerService.chunks.put("2", chunk2);
         chunkServerService.chunks.put("3", chunk3);
 
+        chunkServerService.synchronization = true;
         chunkServerService.onChunkServerDown(machine3);
 
         verify(chunkClient).replicateSync(machine2, machine1, "2");
@@ -146,6 +149,7 @@ public class ChunkServerServiceTest {
         String[] listOfChunkNames3 = { "Hello", "World", "I", "Have", "These", "Chunks", "Also", "new", "Chunkies", "new one" };
         when(chunkClient.list(machine3)).thenReturn(listOfChunkNames3);
 
+        chunkServerService.synchronization = true;
         this.chunkServerService.onChunkServerUp(machine);
         this.chunkServerService.onChunkServerUp(machine2);
         this.chunkServerService.onChunkServerUp(machine3);
