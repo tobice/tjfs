@@ -2,6 +2,7 @@ package edu.uno.cs.tjfs.master;
 
 import edu.uno.cs.tjfs.chunkserver.ChunkServer;
 import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.threads.JobExecutor;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 import org.apache.log4j.Logger;
@@ -37,52 +38,46 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         }
     }
 
-    private List<ChunkDescriptor> getChunksFromMachine(Machine machine){
-        List<ChunkDescriptor> result = new ArrayList<>();
-        Iterator it = chunks.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry)it.next();
-
-            if (((ChunkDescriptor) pair.getValue()).chunkServers.contains(machine)){
-                result.add((ChunkDescriptor) pair.getValue());
-            }
-        }
-        return result;
-    }
-
     @Override
     public void onChunkServerDown(Machine machine) {
-        //This is going to go through all the chunks not just the ones on that machine
-        List<ChunkDescriptor> tempChunks = getChunksFromMachine(machine);
-        for (ChunkDescriptor chunk : tempChunks) {
-            chunk.chunkServers.remove(machine);
-            if (chunk.chunkServers.size() < 2) {
-                try {
-                    //Get a new machine to replicate to
-                    Machine machineToReplicateTo = getRandomChunkServerNotEqualTo(chunk.chunkServers.get(0));
-                    //Replicate synchronously
-                    this.chunkClient.replicateSync(
-                            chunk.chunkServers.get(0),
-                            machineToReplicateTo,
-                            chunk.name);
-                    chunk.chunkServers.add(machineToReplicateTo);
-                } catch (TjfsException e) {
-                    logger.error("ChunkServerService.onChunkServerDown - Cannot Run the Chunk Replication");
-                    logger.error("ChunkServerService.onChunkServerDown - ", e);
-                }
-            }
+        try {
+            // Replicate chunks so that there are two copies of each on different servers.
+            List<ReplicateChunkJob> jobs = generateReplicateJobs(machine);
+            ReplicateChunkJobProducer producer = new ReplicateChunkJobProducer(jobs);
+            JobExecutor executor = new JobExecutor(producer, 20, 20);
+            executor.execute();
+        } catch (TjfsException e) {
+            logger.error("Chunk replication failed. " + e.getMessage(), e);
         }
-        // TODO: init chunk replication??
     }
 
     @Override
     public void onChunkServerUp(Machine machine) {
         try {
             updateChunkMappingsFromMachine(machine);
-        }catch(Exception e){
+        } catch(Exception e){
             logger.error("ChunkServerService.onChunkServerUp - Cannot get chunks.");
             logger.error("ChunkServerService.onChunkServerUp - ", e);
         }
+    }
+
+    /**
+     * Generate list of replicate jobs that will replicate those chunks whose copies disappeared
+     * with the given machine going down
+     * @param machineDown the machine that wen down
+     * @return list of replicate chunk jobs that should bring back the balance
+     */
+    protected List<ReplicateChunkJob> generateReplicateJobs(Machine machineDown) {
+        return chunks.values().stream()
+            .filter(chunk -> chunk.chunkServers.contains(machineDown))
+            .map(chunk -> {
+                chunk.chunkServers.remove(machineDown);
+                List<Machine> targetServers = getRandomChunkServers(2, chunk.chunkServers);
+                return chunk.chunkServers.size() < 2 ?
+                    new ReplicateChunkJob(chunkClient, chunk, targetServers) : null;
+            })
+            .filter(job -> job != null)
+            .collect(Collectors.toList());
     }
 
     private void updateChunkMappingsFromMachine(Machine machine) throws TjfsException {
@@ -102,25 +97,34 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         }
     }
 
-    public List<Machine> getChunkServers() {
+    protected List<Machine> getChunkServers() {
         return zkClient.getChunkServers();
     }
 
-    public List<Machine> getRandomChunkServers(int number) {
+    /**
+     * Get random chunk servers.
+     * @param number how many chunk servers should be returned
+     * @return list of random chunkservers of the maximum size of number
+     */
+    protected List<Machine> getRandomChunkServers(int number) {
         List<Machine> chunkServers = getChunkServers();
         Collections.shuffle(chunkServers);
-        return new LinkedList<>(chunkServers.subList(0, number));
+        return new LinkedList<>(chunkServers.subList(0, Math.min(number, chunkServers.size())));
     }
 
-    public Machine getRandomChunkServerNotEqualTo(Machine machine) {
-        List<Machine> chunkServers = getChunkServers();
+    /**
+     * Get list of random target chunk servers that are different from the ones contained in the
+     * avoid collection
+     * @param number how many chunk servers should be returned
+     * @param avoid chunk servers that should be avoided
+     * @return list of random chunkservers of the maximum size of number
+     */
+    protected List<Machine> getRandomChunkServers(int number, List<Machine> avoid) {
+        List<Machine> chunkServers = getChunkServers().stream()
+            .filter(server -> !avoid.contains(server))
+            .collect(Collectors.toList());
         Collections.shuffle(chunkServers);
-        Machine returnMachine = chunkServers.subList(0, 1).get(0);
-        while (returnMachine.equals(machine)) {
-            Collections.shuffle(chunkServers);
-            returnMachine = chunkServers.subList(0, 1).get(0);
-        }
-        return returnMachine;
+        return new LinkedList<>(chunkServers.subList(0, Math.min(number, chunkServers.size())));
     }
 
     public FileDescriptor updateChunkServers(FileDescriptor fileDescriptor) throws TjfsException {
