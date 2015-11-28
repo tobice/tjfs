@@ -25,6 +25,7 @@ public class Launcher {
         zkClient.addOnMasterServerUpListener(listener);
         zkClient.addOnConnectionLostListener(listener);
 
+        /*
         int i = 1;
         while (true) {
             Thread.sleep(1000);
@@ -34,6 +35,10 @@ public class Launcher {
 
             }
         }
+        */
+        String lock = zkClient.acquireFileLock(Paths.get("/ubuntu.iso"), READ);
+        Thread.sleep(21000);
+        zkClient.releaseLock(lock);
     }
 
     static class Listener implements IZookeeperClient.IChunkServerUpListener, IZookeeperClient

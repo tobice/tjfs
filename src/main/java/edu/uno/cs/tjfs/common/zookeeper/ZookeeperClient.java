@@ -58,12 +58,6 @@ public class ZookeeperClient implements IZookeeperClient {
     /** Data monitor receiving events from Zookeeper */
     protected final DataMonitor dataMonitor;
 
-    /**
-     * Currently held locks. Pairs of node path and actual path (with the counter suffix). It's
-     * necessary to remember it so that we can which node to remove when releasing locks.
-     */
-    protected final Map<String, String> currentLocks = new HashMap<>();
-
     /** List of currently registered chunk servers. Synchronized with Zookeeper */
     protected List<Machine> chunkServers = new LinkedList<>();
 
@@ -185,19 +179,20 @@ public class ZookeeperClient implements IZookeeperClient {
      * @param lockType type of lock, either READ or WRITE
      * @throws ZookeeperException.FileLockedException if the file is already locked
      * @throws ZookeeperException general Zookeeper failure
+     * @return lock identifier that can be used for releasing the lock
      */
     @Override
-    public void acquireFileLock(Path path, LockType lockType) throws ZookeeperException {
+    public String acquireFileLock(Path path, LockType lockType) throws ZookeeperException {
         try {
             String zkPath = makeZkPath(path);
             createIfMissing(zkPath);
             if (lockType == READ) {
                 // Allow concurrent READ locks. There can be multiple READ locks on a file but only as
                 // long as there are no WRITE locks.
-                acquireLock(zkPath, READ, READ);
+                return acquireLock(zkPath, READ, READ);
             } else {
                 // WRITE locks are 100% exclusive with everything else.
-                acquireLock(zkPath, WRITE);
+                return acquireLock(zkPath, WRITE);
             }
         } catch (ZookeeperException.NodeLockedException e) {
             throw new ZookeeperException.FileLockedException(e);
@@ -205,15 +200,15 @@ public class ZookeeperClient implements IZookeeperClient {
     }
 
     /**
-     * Release lock from given file.
-     * @param path to the file whose lock should be removed
-     * @param lockType type of lock, either READ or WRITE
+     * Release lock.
+     * @param lock to be released
      * @throws ZookeeperException general Zookeeper failure
      */
     @Override
-    public void releaseFileLock(Path path, LockType lockType) throws ZookeeperException {
-        String zkPath = makeZkPath(path);
-        releaseLock(zkPath, lockType);
+    public void releaseFileLock(String lock) throws ZookeeperException {
+        if (lock != null) {
+            releaseLock(lock);
+        }
     }
 
 
@@ -451,9 +446,6 @@ public class ZookeeperClient implements IZookeeperClient {
     protected String acquireLock(String znode, LockType lock, LockType ignore, byte[] data) throws ZookeeperException {
         // It might happen that we already hold a lock for this node
         String path = znode + "/" + lock;
-        if (currentLocks.get(path) != null) {
-            return currentLocks.get(path);
-        }
 
         // Write a new sequential node and immediately afterwards get the list of current children.
         // (Remove ignored children if required. I. e. when acquiring new READ lock, we ignore
@@ -471,8 +463,6 @@ public class ZookeeperClient implements IZookeeperClient {
             delete(actualPath);
             throw new ZookeeperException.NodeLockedException(path);
         } else {
-            // Remember the lock.
-            currentLocks.put(path, actualPath);
             return actualPath;
         }
     }
@@ -480,18 +470,12 @@ public class ZookeeperClient implements IZookeeperClient {
     /**
      * Release lock from the node. If there is no lock currently held at this node, we silently
      * finish.
-     * @param znode that we want to "unlock"
-     * @param lock type of lock that we want to remove.
+     * @param lock identifier to be removed (which also happens to be a znode)
      * @throws ZookeeperException
      */
-    protected void releaseLock(String znode, LockType lock) throws ZookeeperException {
+    protected void releaseLock(String lock) throws ZookeeperException {
         try {
-            String path = znode + "/" + lock;
-            String actualPath = currentLocks.get(path);
-            if (actualPath != null) {
-                delete(actualPath);
-                currentLocks.remove(path);
-            }
+            delete(lock);
         } catch (ZookeeperException.NodeNotFoundException e) {
             // The point is to release the the lock. So if there is no node (it has been for
             // some reason already removed) it doesn't really matter.

@@ -170,10 +170,9 @@ public class ZookeeperClientTest {
 
     @Test
     public void testReleaseFileLock() throws ZookeeperException, KeeperException, InterruptedException {
-        Path path = Paths.get("/ubuntu/iso.iso");
-        zkClient.currentLocks.put("/fs/" + path.toString().hashCode() + "/read", "/fs/" + path.toString().hashCode() + "/read0000000001");
-        zkClient.releaseFileLock(path, IZookeeperClient.LockType.READ);
-        verify(zk).delete("/fs/" + path.toString().hashCode() + "/read0000000001", -1);
+        String lock = "lock_node";
+        zkClient.releaseFileLock(lock);
+        verify(zk).delete(lock, -1);
     }
 
     @Test

@@ -85,14 +85,14 @@ public interface IZookeeperClient {
      * @param lockType type of lock, either READ or WRITE
      * @throws ZookeeperException.FileLockedException if the file is already locked
      * @throws ZookeeperException general Zookeeper failure
+     * @return lock identifier that can be used for releasing the lock
      */
-    void acquireFileLock(Path path, LockType lockType) throws ZookeeperException;
+    String acquireFileLock(Path path, LockType lockType) throws ZookeeperException;
 
     /**
-     * Release lock from given file.
-     * @param path to the file whose lock should be removed
-     * @param lockType type of lock, either READ or WRITE
+     * Release lock.
+     * @param lock to be released
      * @throws ZookeeperException general Zookeeper failure
      */
-    void releaseFileLock(Path path, LockType lockType) throws ZookeeperException;
+    void releaseFileLock(String lock) throws ZookeeperException;
 }

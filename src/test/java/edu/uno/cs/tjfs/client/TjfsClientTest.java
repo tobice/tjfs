@@ -71,6 +71,9 @@ public class TjfsClientTest {
         // operation sub components (JobProducer, JobExecutor, PutChunkJob). This merely makes
         // sure that all components work together as they should.
 
+        final String lock = "lock_node";
+        when(zkClient.acquireFileLock(path, WRITE)).thenReturn(lock);
+
         config.setChunkSize(3);
         config.setExecutorPoolSize(2);
         config.setExecutorQueueSize(2);
@@ -85,7 +88,7 @@ public class TjfsClientTest {
 
         // Test that the file has been locked and unlocked
         verify(zkClient).acquireFileLock(path, WRITE);
-        verify(zkClient).releaseFileLock(path, WRITE);
+        verify(zkClient).releaseFileLock(lock);
 
         // Test that the chunks have been correctly pushed using the chunk client.
         verify(chunkClient).put(anyObject(), eq("abc".getBytes()));
@@ -105,6 +108,9 @@ public class TjfsClientTest {
         config.setPipeBufferSize(2);
         masterClient.putFile(file);
 
+        final String lock = "lock_node";
+        when(zkClient.acquireFileLock(path, READ)).thenReturn(lock);
+
         when(chunkClient.get(file.getChunk(0))).thenReturn("abc".getBytes());
         when(chunkClient.get(file.getChunk(1))).thenReturn("def".getBytes());
         when(chunkClient.get(file.getChunk(2))).thenReturn("ghi".getBytes());
@@ -118,7 +124,7 @@ public class TjfsClientTest {
         // finish)
         Thread.sleep(100);
         verify(zkClient).acquireFileLock(path, READ);
-        verify(zkClient).releaseFileLock(path, READ);
+        verify(zkClient).releaseFileLock(lock);
     }
 
     @Test
@@ -145,6 +151,8 @@ public class TjfsClientTest {
 
     @Test
     public void testDelete() throws Exception {
+        final String lock = "lock_node";
+        when(zkClient.acquireFileLock(path, WRITE)).thenReturn(lock);
 
         // First put a standard file, then delete it and finally make sure that the file has
         // been replaced with an empty descriptor
@@ -155,7 +163,7 @@ public class TjfsClientTest {
 
         // Test that the file has been locked and unlocked
         verify(zkClient).acquireFileLock(file.path, WRITE);
-        verify(zkClient).releaseFileLock(file.path, WRITE);
+        verify(zkClient).releaseFileLock(lock);
     }
 
     @Test
@@ -181,6 +189,11 @@ public class TjfsClientTest {
         Path sourcePath = Paths.get("/a");
         Path destinationPath = Paths.get("/b");
 
+        final String lock1 = "lock_node1";
+        final String lock2 = "lock_node2";
+        when(zkClient.acquireFileLock(sourcePath, WRITE)).thenReturn(lock1);
+        when(zkClient.acquireFileLock(destinationPath, WRITE)).thenReturn(lock2);
+
         FileDescriptor sourceFile = new FileDescriptor(sourcePath, file.time, file.chunks);
         masterClient.putFile(sourceFile);
         tjfsClient.move(sourcePath, destinationPath);
@@ -191,7 +204,7 @@ public class TjfsClientTest {
         // Test that the file has been locked and unlocked
         verify(zkClient).acquireFileLock(sourcePath, WRITE);
         verify(zkClient).acquireFileLock(destinationPath, WRITE);
-        verify(zkClient).releaseFileLock(sourcePath, WRITE);
-        verify(zkClient).releaseFileLock(destinationPath, WRITE);
+        verify(zkClient).releaseFileLock(lock1);
+        verify(zkClient).releaseFileLock(lock2);
     }
 }

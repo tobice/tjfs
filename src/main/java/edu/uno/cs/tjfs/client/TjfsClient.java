@@ -59,7 +59,7 @@ public class TjfsClient implements ITjfsClient {
             }
 
             // Lock the file so that nobody changes it while we're reading
-            zkClient.acquireFileLock(path, READ);
+            final String lock = zkClient.acquireFileLock(path, READ);
 
             // "Pipe" incoming data from the chunk servers directly to the user. The input stream
             // is wrapped by another stream that lets us pass a possible exception to the end user.
@@ -89,7 +89,7 @@ public class TjfsClient implements ITjfsClient {
                     // Let the stream know that it can throw the exception (because he has it now).
                     inWithException.countDown();
                     try {
-                        zkClient.releaseFileLock(path, READ);
+                        zkClient.releaseFileLock(lock);
                     } catch (ZookeeperException e) {
                         logger.warn("Unable to release the file lock: " + e.getMessage());
                     }
@@ -113,7 +113,7 @@ public class TjfsClient implements ITjfsClient {
     public void put(Path path, InputStream data, int byteOffset) throws TjfsClientException {
         try {
             // Lock the file so that nobody tries to change the file at the same time
-            zkClient.acquireFileLock(path, WRITE);
+            final String lock = zkClient.acquireFileLock(path, WRITE);
 
             // Get file descriptor. Might by empty, doesn't matter.
             FileDescriptor file = masterClient.getFile(path);
@@ -129,7 +129,7 @@ public class TjfsClient implements ITjfsClient {
             // Update the descriptor.
             masterClient.putFile(file);
 
-            zkClient.releaseFileLock(path, WRITE);
+            zkClient.releaseFileLock(lock);
         } catch (TjfsException e) {
             String message = "File transfer failed. Reason: " + e.getMessage();
             throw new TjfsClientException(message, e);
@@ -138,8 +138,9 @@ public class TjfsClient implements ITjfsClient {
 
     @Override
     public void delete(Path path) throws TjfsClientException {
+        String lock = null;
         try {
-            zkClient.acquireFileLock(path, WRITE);
+            lock = zkClient.acquireFileLock(path, WRITE);
 
             FileDescriptor deletedFile = new FileDescriptor(path);
             masterClient.putFile(deletedFile);
@@ -149,7 +150,7 @@ public class TjfsClient implements ITjfsClient {
             throw new TjfsClientException(message, e);
         } finally {
             try {
-                zkClient.releaseFileLock(path, WRITE);
+                zkClient.releaseFileLock(lock);
             } catch (ZookeeperException e) {
                 logger.warn("Unable to release the file lock: " + e.getMessage());
             }
@@ -185,9 +186,11 @@ public class TjfsClient implements ITjfsClient {
 
     @Override
     public void move(Path sourcePath, Path destinationPath) throws TjfsClientException {
+        String lockSource = null;
+        String lockDestination = null;
         try {
-            zkClient.acquireFileLock(sourcePath, WRITE);
-            zkClient.acquireFileLock(destinationPath, WRITE);
+            lockSource = zkClient.acquireFileLock(sourcePath, WRITE);
+            lockDestination = zkClient.acquireFileLock(destinationPath, WRITE);
 
             // Moving a file is a simple procedure. We take the original descriptor, move it
             // to a new location and delete the old one (by replacing it with an empty descriptor).
@@ -200,8 +203,8 @@ public class TjfsClient implements ITjfsClient {
             throw new TjfsClientException("Unable to move the file. Reason: " + e.getMessage(), e);
         } finally {
             try {
-                zkClient.releaseFileLock(sourcePath, WRITE);
-                zkClient.releaseFileLock(destinationPath, WRITE);
+                zkClient.releaseFileLock(lockSource);
+                zkClient.releaseFileLock(lockDestination);
             } catch (ZookeeperException e) {
                 logger.warn("Unable to release the file lock: " + e.getMessage());
             }
