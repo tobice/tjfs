@@ -17,9 +17,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 public class ZookeeperClientTest {
@@ -224,6 +222,35 @@ public class ZookeeperClientTest {
         zkClient.process(new WatchedEvent(Watcher.Event.EventType.NodeChildrenChanged, null, "/master"));
 
         verify(upListener).onMasterServerUp(machine);
+    }
+
+    @Test
+    public void testAnotherMasterGoesUp() throws KeeperException, InterruptedException {
+        // In this test we verify that an attempt to add another master won't invoke the
+        // onMasterServer up event.
+
+        Machine machine1 = Machine.fromString("127.0.0.1:8000");
+        Machine machine2 = Machine.fromString("127.0.0.2:8000");
+
+        // The first one is already a master
+        zkClient.masterServer = machine1;
+
+        when(zk.getChildren("/master", true))
+            .thenReturn(Arrays.asList( "machine0000000002", "machine0000000001")); // on purpose return the new one before the first one
+        when(zk.getData("/master/machine0000000001", false, null))
+            .thenReturn(machine1.getBytes());
+        when(zk.getData("/master/machine0000000002", false, null))
+            .thenReturn(machine2.getBytes());
+
+        // Mock the listener so that we can verify that IT WASN'T CALLED AT ALL.
+        IZookeeperClient.IMasterServerUpListener upListener = mock(IZookeeperClient.IMasterServerUpListener.class);
+        zkClient.addOnMasterServerUpListener(upListener);
+
+        // Send an event that second master was added (attempted to be added)
+        zkClient.process(new WatchedEvent(Watcher.Event.EventType.NodeChildrenChanged, null, "/master"));
+
+        verify(upListener, never()).onMasterServerUp(machine1);
+        verify(upListener, never()).onMasterServerUp(machine2);
     }
 
     @Test

@@ -28,7 +28,11 @@ public class Launcher {
         int i = 1;
         while (true) {
             Thread.sleep(1000);
-            // zkClient.registerChunkServer(Machine.fromString("127.0.0.1:" + i++));
+            try {
+                zkClient.registerMasterServer(Machine.fromString("127.0.0.1:" + i++));
+            } catch (ZookeeperException.MasterAlreadyExistsException e) {
+
+            }
         }
     }
 

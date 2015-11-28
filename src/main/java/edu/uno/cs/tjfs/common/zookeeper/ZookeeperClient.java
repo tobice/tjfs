@@ -303,12 +303,17 @@ public class ZookeeperClient implements IZookeeperClient {
      */
     protected void updateMasterServer(boolean fireTriggers) throws ZookeeperException {
         // Get the current master server and reset the watch
-        List<String> children = getChildren(Znode.MASTER.toString(), true);
-        Machine newMaster;
-        if (children.size() == 0) {
-            newMaster = null;
-        } else {
-            newMaster = Machine.fromBytes(getData(Znode.MASTER.toString() + "/" + children.get(0), false));
+        List<String> children = getChildren(Znode.MASTER.toString(), true)
+            .stream().sorted().collect(Collectors.toList());
+        Machine newMaster = null;
+
+        // The child might have disappeared in between, so let's find to lowest child that
+        // can give as the new master
+        for (String child : children) {
+            try {
+                newMaster = Machine.fromBytes(getData(Znode.MASTER.toString() + "/" + child, false));
+                break;
+            } catch (ZookeeperException.NodeNotFoundException e) { }
         }
 
         // We have to update the local variable first so that all listeners have that value
