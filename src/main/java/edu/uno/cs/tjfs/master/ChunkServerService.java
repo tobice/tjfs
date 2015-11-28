@@ -29,6 +29,11 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         this.chunks = new HashMap<>();
     }
 
+    public void start()  {
+        zkClient.addOnChunkServerDownListener(this);
+        zkClient.addOnChunkServerUpListener(this);
+    }
+
     public void startSynchronization() {
         synchronization = true;
 
@@ -45,11 +50,6 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
 
     public void stopSynchronization() {
         synchronization = false;
-    }
-
-    public void start() throws ZookeeperException {
-        zkClient.addOnChunkServerDownListener(this);
-        zkClient.addOnChunkServerUpListener(this);
     }
 
     @Override

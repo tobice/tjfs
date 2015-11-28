@@ -36,6 +36,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
 
     public void start() {
         zkClient.addOnMasterServerDownListener(this);
+        chunkServerService.start();
         storage.init();
         attemptToBecomeMaster();
     }
