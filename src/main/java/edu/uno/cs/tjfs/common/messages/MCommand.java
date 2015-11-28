@@ -15,7 +15,6 @@ public enum MCommand {
     PUT_FILE("07", PutFileRequestArgs.class, PutFileResponseArgs.class),
     ALLOCATE_CHUNKS("08", AllocateChunksRequestArgs.class, AllocateChunkResponseArgs.class),
     GET_LOG("09", GetLogRequestArgs.class, GetLogResponseArgs.class),
-    REPLICATE_CHUNK_SYNC("10", ReplicateChunkRequestArgs.class, null),
     LIST_FILE("11", ListFileRequestArgs.class, ListFileResponseArgs.class),
     DELETE_FILE("12", DeleteFileRequestArgs.class, null);//lazy using the same old classes
 

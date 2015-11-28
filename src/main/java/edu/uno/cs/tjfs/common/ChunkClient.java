@@ -40,7 +40,7 @@ public class ChunkClient implements IChunkClient {
 
     @Override
     public void replicateSync(Machine machineFrom, Machine machineTo, String chunkName) throws TjfsException{
-        Request request = new Request(MCommand.REPLICATE_CHUNK_SYNC, new ReplicateChunkRequestArgs(chunkName, machineTo));
+        Request request = new Request(MCommand.REPLICATE_CHUNK, new ReplicateChunkRequestArgs(chunkName, machineTo));
         this.messageClient.send(machineFrom, request);
     }
 
