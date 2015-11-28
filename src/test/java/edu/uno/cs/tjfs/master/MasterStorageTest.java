@@ -4,17 +4,13 @@ import com.google.gson.*;
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 
-import javax.sound.midi.SysexMessage;
-import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -92,7 +88,7 @@ public class MasterStorageTest {
         this.masterStorage.updateLog(logs);
 
         LocalFsClient fs = new LocalFsClient();
-        assertTrue(fs.listFiles(folder.getRoot().toPath()).length == 4);
+        assertTrue(fs.list(folder.getRoot().toPath()).length == 4);
 
         //this get file test should still pass
         resultFile = masterStorage.getFile(path);

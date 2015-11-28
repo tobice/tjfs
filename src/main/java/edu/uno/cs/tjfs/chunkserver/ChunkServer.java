@@ -7,11 +7,8 @@ import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
-import org.apache.commons.io.IOUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -75,7 +72,7 @@ public class ChunkServer implements IServer {
     }
 
     private Response processListChunk() {
-        String[] listOfFiles = this.localFsClient.listFiles(this.fileSystem);
+        String[] listOfFiles = this.localFsClient.list(this.fileSystem);
         return new Response(MCode.SUCCESS, new ListChunkResponseArgs(listOfFiles));
     }
 

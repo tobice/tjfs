@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.rmi.server.ExportException;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -42,5 +43,31 @@ public class LocalFsClientTest {
         Path path = folder.getRoot().toPath().resolve("test");
         exception.expect(NoSuchFileException.class);
         client.readFile(path);
+    }
+
+    @Test
+    public void shouldMakeADirectory() throws IOException {
+        Path path = folder.getRoot().toPath().resolve("directory");
+        client.mkdir(path);
+        assertTrue(path.toFile().exists());
+        assertTrue(path.toFile().isDirectory());
+    }
+
+    @Test
+    public void testExists() throws IOException {
+        Path path = folder.getRoot().toPath().resolve("file");
+        assertFalse(client.exists(path));
+        client.writeBytesToFile(path, new byte[0]);
+        assertTrue(client.exists(path));
+    }
+
+    @Test
+    public void testList() throws IOException {
+        Path path = folder.getRoot().toPath();
+        client.writeBytesToFile(path.resolve("a"), new byte[0]);
+        client.writeBytesToFile(path.resolve("b"), new byte[1]);
+        client.writeBytesToFile(path.resolve("c"), new byte[2]);
+
+        assertThat(Arrays.asList(client.list(path)), hasItems("a", "b", "c"));
     }
 }

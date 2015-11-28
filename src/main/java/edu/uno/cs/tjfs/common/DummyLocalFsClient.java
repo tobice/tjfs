@@ -43,8 +43,19 @@ public class DummyLocalFsClient implements ILocalFsClient {
     }
 
     @Override
-    public String[] listFiles(Path path) {
+    public String[] list(Path path) {
+        //TODO: If required
         return new String[0];
+    }
+
+    @Override
+    public void mkdir(Path path) {
+        //TODO: If required
+    }
+
+    @Override
+    public boolean exists(Path path) {
+        return false;
     }
 
     @Override

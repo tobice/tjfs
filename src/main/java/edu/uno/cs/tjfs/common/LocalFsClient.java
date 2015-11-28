@@ -2,11 +2,13 @@ package edu.uno.cs.tjfs.common;
 
 import org.apache.commons.io.IOUtils;
 
-import java.awt.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.nio.file.StandardCopyOption.*;
 
@@ -39,15 +41,30 @@ public class LocalFsClient implements ILocalFsClient {
     }
 
     @Override
-    public String[] listFiles(Path path) {
+    public String[] list(Path path) {
         File folder = new File(path.toString());
         File[] listOfFiles = folder.listFiles();
-        if (listOfFiles == null) return null;
-        ArrayList<String> fileNames = new ArrayList<>();
-        for(File file : listOfFiles){
-            fileNames.add(file.getName().toString());
+        if (listOfFiles == null) {
+            return new String[0];
         }
-        return fileNames.toArray(new String[fileNames.size()]);
+
+        return Arrays.asList(listOfFiles).stream()
+            .map(File::getName)
+            .collect(Collectors.toList())
+            .toArray(new String[listOfFiles.length]);
+    }
+
+    @Override
+    public void mkdir(Path path) throws IOException {
+        File folder = path.toFile();
+        if (!folder.mkdir()) {
+            throw new IOException("Unable to create the folder");
+        }
+    }
+
+    @Override
+    public boolean exists(Path path) {
+        return path.toFile().exists();
     }
 
     @Override
