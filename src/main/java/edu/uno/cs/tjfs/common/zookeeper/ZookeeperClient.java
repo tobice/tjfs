@@ -272,9 +272,14 @@ public class ZookeeperClient implements IZookeeperClient {
             .map(Machine::fromString)
             .collect(Collectors.toList());
 
+        // We have to update the local variable first so that all listeners have that value
+        // available.
+        List<Machine> old = chunkServers;
+        chunkServers = updated;
+
         if (fireTriggers) {
             // Detect chunk servers that have been removed (are down)
-            for (Machine machine : subtract(chunkServers, updated)) {
+            for (Machine machine : subtract(old, updated)) {
                 logger.info("Chunk server " + machine + " is down");
                 for (IChunkServerDownListener listener : chunkServerDownListeners) {
                     listener.onChunkServerDown(machine);
@@ -282,15 +287,13 @@ public class ZookeeperClient implements IZookeeperClient {
             }
 
             // Detect chunk server that have been added (are up)
-            for (Machine machine : subtract(updated, chunkServers)) {
+            for (Machine machine : subtract(updated, old)) {
                 logger.info("Chunk server " + machine + " is up");
                 for (IChunkServerUpListener listener : chunkServerUpListeners) {
                     listener.onChunkServerUp(machine);
                 }
             }
         }
-
-        chunkServers = updated;
     }
 
     /**
@@ -301,30 +304,33 @@ public class ZookeeperClient implements IZookeeperClient {
     protected void updateMasterServer(boolean fireTriggers) throws ZookeeperException {
         // Get the current master server and reset the watch
         List<String> children = getChildren(Znode.MASTER.toString(), true);
-        Machine updated;
+        Machine newMaster;
         if (children.size() == 0) {
-            updated = null;
+            newMaster = null;
         } else {
-            updated = Machine.fromBytes(getData(Znode.MASTER.toString() + "/" + children.get(0), false));
+            newMaster = Machine.fromBytes(getData(Znode.MASTER.toString() + "/" + children.get(0), false));
         }
+
+        // We have to update the local variable first so that all listeners have that value
+        // available.
+        Machine oldMaster = masterServer;
+        masterServer = newMaster;
 
         if (fireTriggers) {
             // Detect if a new master server was registered (is up)
-            if (updated != null) {
-                if (!updated.equals(masterServer)) {
-                    logger.info("Master server " + updated + " is up");
+            if (newMaster != null) {
+                if (!newMaster.equals(oldMaster)) {
+                    logger.info("Master server " + newMaster + " is up");
                     for (IMasterServerUpListener listener : masterServerUpListeners) {
-                        listener.onMasterServerUp(updated);
+                        listener.onMasterServerUp(newMaster);
                     }
                 }
             // Detect if the old master server was removed (is down)
-            } else if (masterServer != null) {
-                logger.info("Master server " + masterServer + " is down");
+            } else if (oldMaster != null) {
+                logger.info("Master server " + oldMaster + " is down");
                 masterServerDownListeners.forEach(IMasterServerDownListener::onMasterServerDown);
             }
         }
-
-        masterServer = updated;
     }
 
 
