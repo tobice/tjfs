@@ -17,11 +17,10 @@ import org.mockito.Mock;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -330,5 +329,19 @@ public class MasterServerTest {
         resultResponse = masterServer.process(request);
         String[] expectedResultAfterDelete2 = {"filename", "filename2"};
         assertTrue(Arrays.asList(((ListFileResponseArgs) resultResponse.args).files).containsAll(Arrays.asList(expectedResultAfterDelete2)));
+    }
+
+    @Test
+    public void testThatChunkServiceIsUpdatedWhenNewFileIsPut() throws TjfsException {
+        Machine machine1 = Machine.fromString("127.0.0.1:8000");
+        Machine machine2 = Machine.fromString("127.0.0.2:8000");
+        ChunkDescriptor chunk = new ChunkDescriptor("1", Arrays.asList(machine1, machine2));
+        FileDescriptor file = new FileDescriptor(Paths.get("/whatever"), new Date(), new ArrayList<>(Collections.singletonList(chunk)));
+        PutFileRequestArgs args = new PutFileRequestArgs(file);
+
+        masterServer.putFile(args);
+
+        assertThat(chunkServerService.chunks.get("1"), equalTo(chunk));
+        assertThat(chunkServerService.chunks.get("1").chunkServers, equalTo(Arrays.asList(machine1, machine2)));
     }
 }

@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class MasterStorage implements IMasterStorage{
-    private Map<Path, FileDescriptor> fileSystem;
+    private Map<Path, FileDescriptor> fileSystem = new HashMap<>();
     private Path fileSystemPath;
     private ILocalFsClient localFsClient;
     private IMasterClient masterClient;

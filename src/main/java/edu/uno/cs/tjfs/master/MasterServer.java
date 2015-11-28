@@ -152,14 +152,15 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         return Response.Success(new GetFileResponseArgs(fileDescriptor));
     }
 
-    private Response putFile(PutFileRequestArgs args) throws TjfsException {
+    protected Response putFile(PutFileRequestArgs args) throws TjfsException {
         if (args.file.path.toString().isEmpty())
             throw new TjfsException("Empty file name");
         if(listFile(args.file.path).length > 0){
             //This means empty directory would be turned into a file-->But there should not be an empty directory
             throw new TjfsException("A directory with the same name already exists");
         }
-        this.storage.putFile(args.file.path, args.file);
+        storage.putFile(args.file.path, args.file);
+        chunkServerService.addChunks(args.file.chunks);
         return Response.Success();
     }
 

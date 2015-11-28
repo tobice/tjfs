@@ -29,15 +29,20 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         this.chunks = new HashMap<>();
     }
 
+    /** Init the service so that it start listening to Zookeeper. */
     public void start()  {
         zkClient.addOnChunkServerDownListener(this);
         zkClient.addOnChunkServerUpListener(this);
     }
 
+    /**
+     * Initialize synchronization between chunk servers and this service. The service will be
+     * maintaining the availability of individual chunks on chunk servers.
+     **/
     public void startSynchronization() {
         synchronization = true;
 
-        // For each chunk server, get chunks and add them to mappings
+        // Get the current state (what chunks are available on chunk servers).
         chunks = new HashMap<>();
         for(Machine machine : zkClient.getChunkServers()){
             try {
@@ -48,8 +53,43 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
         }
     }
 
+    /** Stop synchronization */
     public void stopSynchronization() {
         synchronization = false;
+    }
+
+    /**
+     * Takes a file descriptor and updates all chunks with latest known locations of the chunks on
+     * chunk servers (so that the file can be downloaded).
+     * @param fileDescriptor file
+     * @return new file descriptor that contains up-to-date locations of chunks.
+     * @throws TjfsException
+     */
+    public FileDescriptor updateChunkServers(FileDescriptor fileDescriptor) throws TjfsException {
+        ArrayList<ChunkDescriptor> updatedChunkMappings = new ArrayList<>();
+        if (fileDescriptor.chunks != null)
+            for (ChunkDescriptor chunk : fileDescriptor.chunks) {
+                if (chunks.get(chunk.name)== null)  {
+                    throw new TjfsException("Invalid chunks in the file");
+                }
+
+                // We have to merge information from both sources.
+                ChunkDescriptor updatedDescriptor = new ChunkDescriptor(
+                        chunk.name, chunks.get(chunk.name).chunkServers, chunk.size, chunk.index);
+                updatedChunkMappings.add(updatedDescriptor);
+            }
+        return new FileDescriptor(fileDescriptor.path, fileDescriptor.time, updatedChunkMappings);
+    }
+
+    /**
+     * Add new chunks. The service simply trusts that the given information is alright, it doesn't
+     * check that those chunks are actually available on those chunk servers.
+     * @param chunks list of chunks with their availabilities on chunk servers.
+     */
+    public void addChunks(List<ChunkDescriptor> chunks) {
+        if (chunks != null) {
+            chunks.forEach(chunk -> this.chunks.put(chunk.name, chunk));
+        }
     }
 
     @Override
@@ -147,21 +187,5 @@ public class ChunkServerService implements IZookeeperClient.IChunkServerUpListen
             .collect(Collectors.toList());
         Collections.shuffle(chunkServers);
         return new LinkedList<>(chunkServers.subList(0, Math.min(number, chunkServers.size())));
-    }
-
-    public FileDescriptor updateChunkServers(FileDescriptor fileDescriptor) throws TjfsException {
-        ArrayList<ChunkDescriptor> updatedChunkMappings = new ArrayList<>();
-        if (fileDescriptor.chunks != null)
-            for (ChunkDescriptor chunk : fileDescriptor.chunks) {
-                if (chunks.get(chunk.name)== null)  {
-                    throw new TjfsException("Invalid chunks in the file");
-                }
-
-                // We have to merge information from both sources.
-                ChunkDescriptor updatedDescriptor = new ChunkDescriptor(
-                    chunk.name, chunks.get(chunk.name).chunkServers, chunk.size, chunk.index);
-                updatedChunkMappings.add(updatedDescriptor);
-            }
-        return new FileDescriptor(fileDescriptor.path, fileDescriptor.time, updatedChunkMappings);
     }
 }
