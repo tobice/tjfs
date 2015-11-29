@@ -308,7 +308,6 @@ public class MasterStorage implements IMasterStorage {
         }
     }
 
-
     /**
      * Get latest snapshot.
      * @return latest snapshot or null if not available.
@@ -362,6 +361,11 @@ public class MasterStorage implements IMasterStorage {
         Snapshot lastSnapshot = getLastSnapshot();
         List<LogItem> log;
         if (lastSnapshot != null) {
+            // No changes were made since the last time; ignore.
+            if (lastSnapshot.version == snapshotVersion) {
+                return;
+            }
+
             lastSnapshot.files.forEach(file -> snapshotContent.put(file.path, file));
             log = getLog(lastSnapshot.version);
         } else {

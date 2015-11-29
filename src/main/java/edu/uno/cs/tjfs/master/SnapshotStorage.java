@@ -39,7 +39,7 @@ public class SnapshotStorage {
             byte[] data = localFsClient.readBytesFromFile(path);
             return gson.fromJson(new String(data, "UTF-8"), IMasterStorage.Snapshot.class);
         } catch (IOException e) {
-            throw new TjfsException("Unable to store snapshot. " + e.getMessage(), e);
+            throw new TjfsException("Unable to restore snapshot. " + e.getMessage(), e);
         }
     }
 

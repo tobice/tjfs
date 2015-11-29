@@ -9,6 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 import java.io.IOException;
@@ -16,10 +17,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -68,6 +72,9 @@ public class MasterStorageTest {
         file1 = new FileDescriptor(Paths.get("/abc"), new Date(), new ArrayList<>(Collections.singletonList(chunk1)));
         file2 = new FileDescriptor(Paths.get("/def"), new Date(), new ArrayList<>(Collections.singletonList(chunk2)));
         file3 = new FileDescriptor(Paths.get("/ghi"), new Date(), new ArrayList<>(Collections.singletonList(chunk3)));
+
+        when(localFsClient.list(logFolder)).thenReturn(new String[0]);
+        when(localFsClient.list(snapshotsFolder)).thenReturn(new String[0]);
     }
 
     @Test
@@ -267,5 +274,128 @@ public class MasterStorageTest {
         exception.expectMessage("Incoming log is older than local data!");
 
         masterStorage.updateLog(log);
+    }
+
+    @Test
+    public void testLoadSnapshot() throws TjfsException {
+        IMasterStorage.Snapshot snapshot = new IMasterStorage.Snapshot(3, Arrays.asList(file1, file2, file3));
+        masterStorage.loadSnapshot(snapshot);
+
+        assertThat(masterStorage.version, is(snapshot.version));
+        assertThat(masterStorage.fileSystem.size(), is(3));
+        assertThat(masterStorage.fileSystem.values(), hasItems(file1, file2, file3));
+
+        verify(snapshotStorage).store(snapshot);
+    }
+
+    @Test
+    public void testClearFilesystem() throws IOException, TjfsException {
+        when(localFsClient.list(logFolder)).thenReturn(new String[] {"1", "2", "3"});
+        when(localFsClient.list(snapshotsFolder)).thenReturn(new String[] {"2"});
+
+        // Create some garbage
+        masterStorage.fileSystem.put(file1.path, file1);
+        masterStorage.fileSystem.put(file2.path, file2);
+        masterStorage.version = 5;
+
+        masterStorage.clearFilesystem();
+
+        verify(localFsClient).list(logFolder);
+        verify(localFsClient).list(snapshotsFolder);
+
+        verify(localFsClient).deleteFile(logFolder.resolve("1"));
+        verify(localFsClient).deleteFile(logFolder.resolve("2"));
+        verify(localFsClient).deleteFile(logFolder.resolve("3"));
+
+        verify(localFsClient).deleteFile(snapshotsFolder.resolve("2"));
+
+        assertThat(masterStorage.fileSystem.size(), is(0));
+        assertThat(masterStorage.version, is(0));
+    }
+
+    @Test
+    public void testMakeFirstSnapshot() throws TjfsException, IOException {
+        Gson gson = CustomGson.create();
+
+        // There is no last snapshot
+        when(masterStorage.getLastSnapshot()).thenReturn(null);
+
+        // Current log
+        when(localFsClient.list(logFolder)).thenReturn(new String[] {"1", "2", "3"});
+        when(localFsClient.readBytesFromFile(logFolder.resolve("1"))).thenReturn(gson.toJson(file1).getBytes());
+        when(localFsClient.readBytesFromFile(logFolder.resolve("2"))).thenReturn(gson.toJson(file2).getBytes());
+        when(localFsClient.readBytesFromFile(logFolder.resolve("3"))).thenReturn(gson.toJson(file3).getBytes());
+
+        // Current version
+        masterStorage.version = 3;
+
+        masterStorage.makeSnapshot();
+
+        // Make sure that the log has been loaded
+        verify(localFsClient).readBytesFromFile(logFolder.resolve("1"));
+        verify(localFsClient).readBytesFromFile(logFolder.resolve("2"));
+        verify(localFsClient).readBytesFromFile(logFolder.resolve("3"));
+
+        // Make sure that the snapshot has been stored
+        ArgumentCaptor<IMasterStorage.Snapshot> argument = ArgumentCaptor.forClass(IMasterStorage.Snapshot.class);
+        verify(snapshotStorage).store(argument.capture());
+
+        // Make sure that correct snapshot has been created
+        IMasterStorage.Snapshot snapshot = argument.getValue();
+        assertThat(snapshot.version, is(3));
+        assertThat(snapshot.files.size(), is(3));
+        assertThat(snapshot.files, hasItems(file1, file2, file3));
+    }
+
+    @Test
+    public void testMakeSnapshotBasedOnOlder() throws TjfsException, IOException {
+        Gson gson = CustomGson.create();
+
+        // Third descriptor is updating the first one
+        file3 = new FileDescriptor(file1.path, file1.time, file3.chunks);
+
+        // The last snapshot
+        IMasterStorage.Snapshot latestSnapshot = new IMasterStorage.Snapshot(2, Arrays.asList(file1, file2));
+        when(masterStorage.getLastSnapshot()).thenReturn(latestSnapshot);
+
+        // Updates in the log
+        when(localFsClient.list(logFolder)).thenReturn(new String[] {"1", "2", "3"});
+        when(localFsClient.readBytesFromFile(logFolder.resolve("3"))).thenReturn(gson.toJson(file3).getBytes());
+
+        // Current version
+        masterStorage.version = 3;
+
+        masterStorage.makeSnapshot();
+
+        // Make sure that only the last item from the log has been read
+        verify(localFsClient, never()).readBytesFromFile(logFolder.resolve("1"));
+        verify(localFsClient, never()).readBytesFromFile(logFolder.resolve("2"));
+        verify(localFsClient).readBytesFromFile(logFolder.resolve("3"));
+
+        // Make sure that the snapshot has been stored
+        ArgumentCaptor<IMasterStorage.Snapshot> argument = ArgumentCaptor.forClass(IMasterStorage.Snapshot.class);
+        verify(snapshotStorage).store(argument.capture());
+
+        // Make sure that correct snapshot has been created
+        IMasterStorage.Snapshot snapshot = argument.getValue();
+        assertThat(snapshot.version, is(3));
+        assertThat(snapshot.files.size(), is(2));
+        assertThat(snapshot.files.get(0), equalTo(file2));
+        assertThat(snapshot.files.get(1), equalTo(file3));
+    }
+
+    @Test
+    public void testMakeNoSnapshot() throws TjfsException {
+        // The last snapshot
+        IMasterStorage.Snapshot latestSnapshot = new IMasterStorage.Snapshot(3, Arrays.asList(file1, file2));
+        when(masterStorage.getLastSnapshot()).thenReturn(latestSnapshot);
+
+        // Current version is the same one as the snapshot's one
+        masterStorage.version = 3;
+
+        masterStorage.makeSnapshot();
+
+        // Since the version is still the same make sure that we didn't create a new snapshot
+        verify(snapshotStorage, never()).store(anyObject());
     }
 }
