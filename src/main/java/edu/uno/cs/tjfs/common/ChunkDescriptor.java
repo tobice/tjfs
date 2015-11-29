@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ChunkDescriptor {
@@ -29,8 +30,12 @@ public class ChunkDescriptor {
         this.index = index;
     }
 
-    public ChunkDescriptor withSizeAndNumber(int size, int number) {
-        return new ChunkDescriptor(this.name, this.chunkServers, size, number);
+    public ChunkDescriptor withSizeAndNumber(int size, int index) {
+        return new ChunkDescriptor(name, chunkServers, size, index);
+    }
+
+    public ChunkDescriptor withoutChunkServers() {
+        return new ChunkDescriptor(name, new ArrayList<>(), size, index);
     }
 
     @Override

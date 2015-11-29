@@ -3,6 +3,8 @@ package edu.uno.cs.tjfs.common;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class FileDescriptor {
     /** File path */
@@ -69,6 +71,19 @@ public class FileDescriptor {
      */
     public boolean isEmpty() {
         return getSize() == 0;
+    }
+
+    /**
+     * Returns new file descriptor which is identical except all information about chunk
+     * servers has been removed
+     * @return cleared file descriptor
+     */
+    public FileDescriptor withoutChunkServers() {
+        List<ChunkDescriptor> clearedChunks = chunks.stream()
+            .map(ChunkDescriptor::withoutChunkServers)
+            .collect(Collectors.toList());
+
+        return new FileDescriptor(path, time, new ArrayList<>(clearedChunks));
     }
 
     @Override

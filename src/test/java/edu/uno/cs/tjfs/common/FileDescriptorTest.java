@@ -10,10 +10,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedList;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -64,5 +61,26 @@ public class FileDescriptorTest {
         Gson gson = CustomGson.create();
         FileDescriptor otherFile = gson.fromJson(gson.toJson(file), FileDescriptor.class);
         assertThat(file, equalTo(otherFile));
+    }
+
+    @Test
+    public void testRemoveChunkServers() {
+        List<Machine> chunkServers = Arrays.asList(
+            Machine.fromString("127.0.0.1:80"), Machine.fromString("127.0.0.1:90"));
+        FileDescriptor file = new FileDescriptor(Paths.get("/random/file"), new Date(),
+            new ArrayList<>(Arrays.asList(
+                    new ChunkDescriptor("0", chunkServers, 3, 0),
+                    new ChunkDescriptor("1", chunkServers, 3, 1),
+                    new ChunkDescriptor("2", chunkServers, 2, 2))));
+
+        assertThat(file.getChunk(0).chunkServers.size(), is(2));
+        assertThat(file.getChunk(1).chunkServers.size(), is(2));
+        assertThat(file.getChunk(2).chunkServers.size(), is(2));
+
+        FileDescriptor cleared = file.withoutChunkServers();
+        assertThat(cleared.getChunk(0).chunkServers.size(), is(0));
+        assertThat(cleared.getChunk(1).chunkServers.size(), is(0));
+        assertThat(cleared.getChunk(2).chunkServers.size(), is(0));
+
     }
 }

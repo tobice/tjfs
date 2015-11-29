@@ -31,6 +31,8 @@ public class MasterStorageTest {
     Path logFolder = storageFolder.resolve("log");
     MasterStorage masterStorage;
 
+    Machine machine1 = Machine.fromString("127.0.0.1:80");
+    Machine machine2 = Machine.fromString("127.0.0.1:80");
     ChunkDescriptor chunk1;
     ChunkDescriptor chunk2;
     ChunkDescriptor chunk3;
@@ -55,9 +57,9 @@ public class MasterStorageTest {
         initMocks(this);
         masterStorage = new MasterStorage(storageFolder, localFsClient, masterClient, 0);
 
-        chunk1 = new ChunkDescriptor("chunk1", new LinkedList<>(), 10, 0);
-        chunk2 = new ChunkDescriptor("chunk2", new LinkedList<>(), 10, 0);
-        chunk3 = new ChunkDescriptor("chunk3", new LinkedList<>(), 10, 0);
+        chunk1 = new ChunkDescriptor("chunk1", Arrays.asList(machine1, machine2), 10, 0);
+        chunk2 = new ChunkDescriptor("chunk2", Arrays.asList(machine1, machine2), 10, 0);
+        chunk3 = new ChunkDescriptor("chunk3", Arrays.asList(machine1, machine2), 10, 0);
 
         file1 = new FileDescriptor(Paths.get("/abc"), new Date(), new ArrayList<>(Collections.singletonList(chunk1)));
         file2 = new FileDescriptor(Paths.get("/def"), new Date(), new ArrayList<>(Collections.singletonList(chunk2)));
@@ -130,7 +132,9 @@ public class MasterStorageTest {
     }
 
     @Test
-    public void testPutAndGet() throws TjfsException {
+    public void testPutAndGet() throws TjfsException, IOException {
+        Gson gson = CustomGson.create();
+
         // Third descriptor is updating the first one
         file3 = new FileDescriptor(file1.path, file1.time, file3.chunks);
 
@@ -142,6 +146,11 @@ public class MasterStorageTest {
         assertThat(masterStorage.fileSystem.get(file2.path), equalTo(file2));
         assertThat(masterStorage.fileSystem.size(), equalTo(2));
         assertThat(masterStorage.version, equalTo(3));
+
+        // Make sure that the files have been actually written and without the chunk servers
+        verify(localFsClient).writeBytesToFile(logFolder.resolve("1"), gson.toJson(file1.withoutChunkServers()).getBytes());
+        verify(localFsClient).writeBytesToFile(logFolder.resolve("2"), gson.toJson(file2.withoutChunkServers()).getBytes());
+        verify(localFsClient).writeBytesToFile(logFolder.resolve("3"), gson.toJson(file3.withoutChunkServers()).getBytes());
     }
 
     @Test

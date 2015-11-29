@@ -127,7 +127,7 @@ public class MasterStorage implements IMasterStorage {
             version++;
             localFsClient.writeBytesToFile(
                 getLogItemPath(version),
-                gson.toJson(file).getBytes());
+                gson.toJson(file.withoutChunkServers()).getBytes());
             if (file.isEmpty()) {
                 fileSystem.remove(file.path);
             } else {
@@ -200,7 +200,7 @@ public class MasterStorage implements IMasterStorage {
                 }
                 localFsClient.writeBytesToFile(
                     getLogItemPath(item.version),
-                    gson.toJson(item.file).getBytes());
+                    gson.toJson(item.file.withoutChunkServers()).getBytes());
                 if (item.file.isEmpty()) {
                     fileSystem.remove(item.file.path);
                 } else {
