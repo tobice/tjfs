@@ -31,5 +31,5 @@ public interface IMasterStorage {
     FileDescriptor getFile(Path path) throws TjfsException;
     void putFile(FileDescriptor file) throws TjfsException;
     List<LogItem> getLog(int startingLogID);
-    void init() throws IOException;
+    void init() throws TjfsException;
 }

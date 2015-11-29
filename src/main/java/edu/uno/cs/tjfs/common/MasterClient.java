@@ -60,4 +60,11 @@ public class MasterClient implements IMasterClient {
         Response response = this.messageClient.send(getMasterServer(), request);
         return ((ListFileResponseArgs) response.args).files;
     }
+
+    @Override
+    public IMasterStorage.Snapshot getLatestSnapshot() throws TjfsException {
+        Request request = new Request(MCommand.GET_LATEST_SNAPSHOT, new GetLatestSnapshotRequestArgs());
+        Response response = this.messageClient.send(getMasterServer(), request);
+        return ((GetLatestSnapshotsResponseArgs) response.args).snapshot;
+    }
 }

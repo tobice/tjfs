@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.master;
 
+import com.google.gson.Gson;
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.MCommand;
@@ -22,6 +23,7 @@ import java.util.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -44,6 +46,9 @@ public class MasterServerTest {
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
+    @Mock
+    SnapshotStorage snapshotStorage;
+
     private ChunkServerService chunkServerService;
     private Config config;
 
@@ -53,7 +58,9 @@ public class MasterServerTest {
         LocalFsClient localFsClient = new LocalFsClient();
         config = new Config();
         chunkServerService = new ChunkServerService(zookeeperClient, chunkClient);
-        MasterStorage masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient, masterClient, config.getMasterReplicationIntervalTime());
+        MasterStorage masterStorage = new MasterStorage(folder.getRoot().toPath(), localFsClient,
+                masterClient, config.getMasterReplicationIntervalTime(), config.getMasterSnapshottingIntervalTime());
+        masterStorage.snapshotStorage = snapshotStorage; // Ugly way to inject mocked object but  what the hell
         masterStorage.init();
         Machine zookeeper = Machine.fromString("127.0.0.1:2181");
         int port = 6002;
@@ -274,5 +281,31 @@ public class MasterServerTest {
 
         assertThat(chunkServerService.chunks.get("1"), equalTo(chunk));
         assertThat(chunkServerService.chunks.get("1").chunkServers, equalTo(Arrays.asList(machine1, machine2)));
+    }
+
+    @Test
+    public void testGetLatestSnapshot() throws TjfsException {
+        masterServer.amIShadow = false;
+        FileDescriptor file1 = mock(FileDescriptor.class);
+        FileDescriptor file2 = mock(FileDescriptor.class);
+        IMasterStorage.Snapshot snapshot = new IMasterStorage.Snapshot(10, Arrays.asList(file1, file2));
+        when(snapshotStorage.getLatest()).thenReturn(snapshot);
+
+        Request request = new Request(MCommand.GET_LATEST_SNAPSHOT, new GetLatestSnapshotRequestArgs());
+        Response response = masterServer.process(request);
+        GetLatestSnapshotsResponseArgs args = (GetLatestSnapshotsResponseArgs) response.args;
+
+        assertThat(args.snapshot, equalTo(snapshot));
+    }
+
+    @Test
+    public void testConvertingNullLatestSnapshot() {
+        // Just a simple test to verify that we can transfer correctly a null value
+        // (the snapshot might be null). I wonder if this is the right place...
+
+        Gson gson = CustomGson.create();
+        GetLatestSnapshotsResponseArgs args = new GetLatestSnapshotsResponseArgs(null);
+        assertThat(gson.fromJson(gson.toJson(args), GetLatestSnapshotsResponseArgs.class)
+            .snapshot, equalTo(null));
     }
 }

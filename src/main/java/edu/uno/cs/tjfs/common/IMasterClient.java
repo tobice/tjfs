@@ -1,5 +1,6 @@
 package edu.uno.cs.tjfs.common;
 
+import edu.uno.cs.tjfs.master.IMasterStorage;
 import edu.uno.cs.tjfs.master.MasterStorage;
 
 import java.nio.file.Path;
@@ -47,4 +48,11 @@ public interface IMasterClient {
      * @return list file and directory names. Folders end with a slash (/)
      */
     String[] list(Path path) throws TjfsException;
+
+    /**
+     * Return latest snapshot from the master if available.
+     * @return latest snapshot or null if there is no snapshot available
+     * @throws TjfsException
+     */
+    IMasterStorage.Snapshot getLatestSnapshot() throws TjfsException;
 }

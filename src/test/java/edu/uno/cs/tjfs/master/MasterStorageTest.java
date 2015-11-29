@@ -52,10 +52,14 @@ public class MasterStorageTest {
     @Mock
     IMasterClient masterClient;
 
+    @Mock
+    SnapshotStorage snapshotStorage;
+
     @Before
     public void setUp() throws IOException {
         initMocks(this);
-        masterStorage = new MasterStorage(storageFolder, localFsClient, masterClient, 0);
+        masterStorage = new MasterStorage(storageFolder, localFsClient, masterClient, 0, 0);
+        masterStorage.snapshotStorage = snapshotStorage; // Ugly way to inject mocked object but  what the hell
 
         chunk1 = new ChunkDescriptor("chunk1", Arrays.asList(machine1, machine2), 10, 0);
         chunk2 = new ChunkDescriptor("chunk2", Arrays.asList(machine1, machine2), 10, 0);
@@ -67,7 +71,7 @@ public class MasterStorageTest {
     }
 
     @Test
-    public void testInitWithEmptyLog() throws IOException {
+    public void testInitWithEmptyLog() throws IOException, TjfsException {
         when(localFsClient.exists(logFolder)).thenReturn(false);
         when(localFsClient.exists(snapshotsFolder)).thenReturn(false);
         when(localFsClient.list(logFolder)).thenReturn(new String[0]);
@@ -81,7 +85,7 @@ public class MasterStorageTest {
     }
 
     @Test
-    public void testInitWithExistingLog() throws IOException {
+    public void testInitWithExistingLog() throws IOException, TjfsException {
         Gson gson = CustomGson.create();
 
         // Second descriptor is empty

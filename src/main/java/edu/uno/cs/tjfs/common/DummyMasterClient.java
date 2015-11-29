@@ -74,6 +74,11 @@ public class DummyMasterClient implements IMasterClient {
         return result.toArray(new String[result.size()]);
     }
 
+    @Override
+    public IMasterStorage.Snapshot getLatestSnapshot() throws TjfsException {
+        return null;
+    }
+
     private List<Machine> getRandomChunkServers(int number) {
         Collections.shuffle(chunkServers);
         return new LinkedList<>(chunkServers.subList(0, number));

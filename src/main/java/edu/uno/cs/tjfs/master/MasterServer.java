@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.Set;
 
 public class MasterServer implements IServer, IZookeeperClient.IMasterServerDownListener {
+    final static Logger logger = Logger.getLogger(MasterServer.class);
 
     private MasterStorage storage;
     private ChunkServerService chunkServerService;
     private IZookeeperClient zkClient;
-    private boolean amIShadow = true;
-    final static Logger logger = Logger.getLogger(MasterServer.class);
+    protected boolean amIShadow = true;
     private Machine me;
 
     public MasterServer(MasterStorage storage, ChunkServerService chunkServerService,
@@ -41,7 +41,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
             chunkServerService.start();
             storage.init();
             attemptToBecomeMaster();
-        } catch (IOException e) {
+        } catch (TjfsException e) {
             throw new TjfsException("Failed to init the storage. " + e.getMessage(), e);
         }
     }
@@ -61,15 +61,17 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         }
     }
 
-    private void becomeMaster() {
+    protected void becomeMaster() {
         amIShadow = false;
         storage.stopReplication();
+        storage.startSnapshotting();
         chunkServerService.startSynchronization();
     }
 
     protected void becomeShadow() {
         amIShadow = true;
-        storage.startReplication();
+        storage.stopSnapshotting();
+        storage.startReplication(); // the replication will take care of snapshotting as well
         chunkServerService.stopSynchronization();
     }
 
@@ -92,6 +94,8 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
                     return getLog((GetLogRequestArgs) request.args);
                 case LIST_FILE:
                     return listFile((ListFileRequestArgs) request.args);
+                case GET_LATEST_SNAPSHOT:
+                    return getLatestSnapshot();
                 default:
                     throw new TjfsException("Invalid Header");
             }
@@ -100,11 +104,11 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         }
     }
 
-    private Response listFile(ListFileRequestArgs args) {
+    protected Response listFile(ListFileRequestArgs args) {
         return Response.Success(new ListFileResponseArgs(storage.list(args.path)));
     }
 
-    private Response allocateChunks(AllocateChunksRequestArgs args){
+    protected Response allocateChunks(AllocateChunksRequestArgs args){
         Set<String> chunkNames = ChunkNameGenerator.generate(args.number);
         ArrayList<ChunkDescriptor> result = new ArrayList<>();
         for (String chunkName : chunkNames){
@@ -113,7 +117,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         return Response.Success(new AllocateChunkResponseArgs(result));
     }
 
-    private Response getFile(GetFileRequestArgs args) throws TjfsException {
+    protected Response getFile(GetFileRequestArgs args) throws TjfsException {
         if (storage.list(args.path).length > 0)
             throw new TjfsException("Cannot get a directory");
         FileDescriptor fileDescriptor = this.storage.getFile(args.path);
@@ -139,9 +143,14 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         return Response.Success();
     }
 
-    private Response getLog(GetLogRequestArgs args){
+    protected Response getLog(GetLogRequestArgs args) {
         List<IMasterStorage.LogItem> log = storage.getLog(args.lastVersion);
         return Response.Success(new GetLogResponseArgs(log));
+    }
+
+    protected Response getLatestSnapshot() throws TjfsException {
+        IMasterStorage.Snapshot snapshot = storage.getLastSnapshot();
+        return Response.Success(new GetLatestSnapshotsResponseArgs(snapshot));
     }
 
     @Override
@@ -161,7 +170,8 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         ChunkServerService chunkServerService = new ChunkServerService(zClient, chunkClient);
         MasterClient masterClient = new MasterClient(messageClient, zClient);
         MasterStorage masterStorage = new MasterStorage(
-                storage, localFsClient, masterClient, config.getMasterReplicationIntervalTime());
+                storage, localFsClient, masterClient,
+                config.getMasterReplicationIntervalTime(), config.getMasterSnapshottingIntervalTime());
         Machine me = new Machine(IpDetect.getLocalIp(zookeeper.ip), port);
         return new MasterServer(masterStorage, chunkServerService, zClient, me);
     }
