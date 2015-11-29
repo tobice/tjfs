@@ -47,7 +47,7 @@ public class SnapshotStorage {
         Integer version = Arrays.asList(localFsClient.list(snapshotFolder)).stream()
             .map(Integer::parseInt)
             .max(Integer::compare)
-            .get();
+            .orElse(null);
 
         if (version == null) {
             return null;
