@@ -115,8 +115,10 @@ public class MasterStorage implements IMasterStorage {
                 // And finally start incremental synchronization with the other master.
                 while (true) {
                     try {
-                        updateLog(masterClient.getLog(this.version));
+                        // First sleep so that in case something go wrong in the cycle body we
+                        // don't create endless cycle.
                         Thread.sleep(replicationIntervalTime);
+                        updateLog(masterClient.getLog(this.version));
                     } catch (TjfsException e) {
                         logger.error("Replication failed. " + e.getMessage(), e);
                     }
