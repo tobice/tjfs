@@ -6,15 +6,19 @@ import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.IMessageClient;
 import edu.uno.cs.tjfs.common.messages.MessageClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class Launcher {
+public class ClientLauncher {
     protected static CommandLineClient cmdClient;
 
     public static void main(String[] args) throws IOException, ZookeeperException {
+        Logger.getLogger("edu.uno.cs.tjfs.common.messages").setLevel(Level.WARN);
+
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 System.out.println("Terminated! Cleaning up...");

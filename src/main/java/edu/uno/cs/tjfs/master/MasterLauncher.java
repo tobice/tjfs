@@ -2,18 +2,19 @@ package edu.uno.cs.tjfs.master;
 
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
-import edu.uno.cs.tjfs.common.messages.MessageClient;
 import edu.uno.cs.tjfs.common.messages.MessageServer;
-import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
+import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class Launcher {
-    final static Logger logger = BaseLogger.getLogger(Launcher.class);
+public class MasterLauncher {
+    final static Logger logger = BaseLogger.getLogger(MasterLauncher.class);
     public static void main(String args[]){
+        Logger.getLogger("edu.uno.cs.tjfs.common.messages").setLevel(Level.WARN);
         while(true) {
             //TODO: get these from command line
             Machine zookeeper = Machine.fromString("137.30.122.138:2181");
@@ -25,10 +26,10 @@ public class Launcher {
                 MessageServer messageServer = new MessageServer(masterServer);
                 masterServer.start();
                 messageServer.start(port);
-            } catch (TjfsException e) {
-                logger.error(e.getMessage(), e);
+            } catch (ZookeeperException e) {
+                logger.error(e.getMessage());
                 break;
-            } catch (IOException e) {
+            } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
         }

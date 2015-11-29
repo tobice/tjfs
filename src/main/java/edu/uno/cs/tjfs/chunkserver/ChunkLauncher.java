@@ -4,14 +4,17 @@ import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
 import edu.uno.cs.tjfs.common.messages.MessageServer;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class Launcher {
-    final static Logger logger = BaseLogger.getLogger(Launcher.class);
+public class ChunkLauncher {
+    final static Logger logger = BaseLogger.getLogger(ChunkLauncher.class);
     public static void main(String[] args){
+        Logger.getLogger("edu.uno.cs.tjfs.common.messages").setLevel(Level.WARN);
+
         while(true) {
             try {
                 // TODO: get these arguments from the command line
@@ -25,7 +28,7 @@ public class Launcher {
                 chunkServer.start();
                 server.start(6002);
             } catch (ZookeeperException e) {
-                logger.error(e.getMessage());//if any error logs it and restarts
+                logger.error(e.getMessage());
                 break;
             } catch (Exception e) {
                 logger.error(e.getMessage());//if any error logs it and restarts

@@ -53,7 +53,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>edu.uno.cs.tjfs.client.Launcher</mainClass>
+                            <mainClass>edu.uno.cs.tjfs.client.ClientLauncher</mainClass>
                             <classpathPrefix>dependency-jars/</classpathPrefix>
                         </manifest>
                     </archive>
