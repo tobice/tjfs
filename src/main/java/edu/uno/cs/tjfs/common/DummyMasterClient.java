@@ -1,5 +1,7 @@
 package edu.uno.cs.tjfs.common;
 
+import edu.uno.cs.tjfs.master.IMasterStorage;
+
 import java.nio.file.Path;
 import java.util.*;
 
@@ -45,7 +47,7 @@ public class DummyMasterClient implements IMasterClient {
     }
 
     @Override
-    public List<FileDescriptor> getLog(int logID) throws TjfsException {
+    public List<IMasterStorage.LogItem> getLog(int logID) throws TjfsException {
         return null;
     }
 
@@ -70,11 +72,6 @@ public class DummyMasterClient implements IMasterClient {
         }
 
         return result.toArray(new String[result.size()]);
-    }
-
-    @Override
-    public void delete(Path path) throws TjfsException {
-
     }
 
     private List<Machine> getRandomChunkServers(int number) {

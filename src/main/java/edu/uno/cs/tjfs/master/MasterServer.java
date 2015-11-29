@@ -11,6 +11,7 @@ import edu.uno.cs.tjfs.common.zookeeper.ZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,11 +35,15 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
         this.me = me;
     }
 
-    public void start() {
-        zkClient.addOnMasterServerDownListener(this);
-        chunkServerService.start();
-        storage.init();
-        attemptToBecomeMaster();
+    public void start() throws TjfsException {
+        try {
+            zkClient.addOnMasterServerDownListener(this);
+            chunkServerService.start();
+            storage.init();
+            attemptToBecomeMaster();
+        } catch (IOException e) {
+            throw new TjfsException("Failed to init the storage. " + e.getMessage(), e);
+        }
     }
 
     private boolean amIShadow() {
@@ -87,46 +92,16 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
                     return getLog((GetLogRequestArgs) request.args);
                 case LIST_FILE:
                     return listFile((ListFileRequestArgs) request.args);
-                case DELETE_FILE:
-                    return deleteFile((DeleteFileRequestArgs) request.args);
                 default:
                     throw new TjfsException("Invalid Header");
             }
-        }catch (Exception e){
+        } catch (Exception e){
             throw new TjfsException(e.getMessage(), e);
         }
     }
 
-    private Response deleteFile(DeleteFileRequestArgs args) throws TjfsException {
-        if (listFile(args.path).length > 1)
-            throw new TjfsException("Cannot delete directory");
-        storage.deleteFile(args.path);
-        return Response.Success();
-    }
-
-    private String[] listFile(Path path){
-        String prefix = path.toString();
-        if (!prefix.endsWith("/")) {
-            prefix += "/"; // normalize
-        }
-        Set<String> result = new HashSet<>();
-
-        for (Path key : storage.getFileSystem().keySet()) {
-            String s = key.toString();
-            if (s.startsWith(prefix)) {
-                s = s.replaceFirst("^" + prefix, "");
-                if (!s.contains("/")) {
-                    result.add(s);
-                } else {
-                    result.add(s.replaceAll("/.*$", "/"));
-                }
-            }
-        }
-        return result.toArray(new String[result.size()]);
-    }
-
     private Response listFile(ListFileRequestArgs args) {
-        return Response.Success(new ListFileResponseArgs(listFile(args.path)));
+        return Response.Success(new ListFileResponseArgs(storage.list(args.path)));
     }
 
     private Response allocateChunks(AllocateChunksRequestArgs args){
@@ -139,7 +114,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     }
 
     private Response getFile(GetFileRequestArgs args) throws TjfsException {
-        if (listFile(args.path).length > 0)
+        if (storage.list(args.path).length > 0)
             throw new TjfsException("Cannot get a directory");
         FileDescriptor fileDescriptor = this.storage.getFile(args.path);
         fileDescriptor = fileDescriptor == null ? new FileDescriptor(args.path) : fileDescriptor;
@@ -155,18 +130,18 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     protected Response putFile(PutFileRequestArgs args) throws TjfsException {
         if (args.file.path.toString().isEmpty())
             throw new TjfsException("Empty file name");
-        if(listFile(args.file.path).length > 0){
+        if(storage.list(args.file.path).length > 0){
             //This means empty directory would be turned into a file-->But there should not be an empty directory
             throw new TjfsException("A directory with the same name already exists");
         }
-        storage.putFile(args.file.path, args.file);
+        storage.putFile(args.file);
         chunkServerService.addChunks(args.file.chunks);
         return Response.Success();
     }
 
     private Response getLog(GetLogRequestArgs args){
-        List<FileDescriptor> result = storage.getLog(args.logID);
-        return Response.Success(new GetLogResponseArgs(result));
+        List<IMasterStorage.LogItem> log = storage.getLog(args.lastVersion);
+        return Response.Success(new GetLogResponseArgs(log));
     }
 
     @Override

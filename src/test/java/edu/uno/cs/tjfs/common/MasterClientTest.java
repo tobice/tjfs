@@ -5,6 +5,7 @@ import edu.uno.cs.tjfs.common.messages.*;
 import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
+import edu.uno.cs.tjfs.master.IMasterStorage;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -100,18 +101,18 @@ public class MasterClientTest {
             add(new ChunkDescriptor("testChunk2", null));
         }};
         FileDescriptor fileDescriptor = new FileDescriptor(testPath, new Date(), chunks);
-        ArrayList<FileDescriptor> logs = new ArrayList<FileDescriptor>(){{
-            add(fileDescriptor);
+        ArrayList<IMasterStorage.LogItem> logs = new ArrayList<IMasterStorage.LogItem>(){{
+            add(new IMasterStorage.LogItem(0, fileDescriptor));
         }};
         Request request = new Request(MCommand.GET_LOG, new GetLogRequestArgs(10));
         when(zookeeperClient.getMasterServer()).thenReturn(machine);
 
         Response response = Response.Success(new GetLogResponseArgs(logs));
         when(messageClient.send(machine, request)).thenReturn(response);
-        List<FileDescriptor> result = masterClient.getLog(10);
+        List<IMasterStorage.LogItem> result = masterClient.getLog(10);
         verify(messageClient).send(machine, request);
         assertTrue(result.size() == 1);
-        assertTrue(result.get(0).equals(fileDescriptor));
+        assertTrue(result.get(0).file.equals(fileDescriptor));
     }
 
     @Test
@@ -127,17 +128,5 @@ public class MasterClientTest {
         verify(messageClient).send(machine, request);
         assertTrue(result.length == 2);
         assertTrue(testResult.equals(result));
-    }
-
-    @Test
-    public void deleteFileShouldCallMessageClientTest() throws TjfsException{
-        Machine machine = new Machine("127.0.0.1", 6002);
-        Path testPath = Paths.get("testPath");
-        Request request = new Request(MCommand.DELETE_FILE, new ListFileRequestArgs(testPath));
-        when(zookeeperClient.getMasterServer()).thenReturn(machine);
-        Response response = Response.Success(new ErrorResponseArgs(""));
-        when(messageClient.send(machine, request)).thenReturn(response);
-        masterClient.delete(testPath);
-        verify(messageClient).send(machine, request);
     }
 }

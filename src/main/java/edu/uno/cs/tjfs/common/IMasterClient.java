@@ -1,5 +1,7 @@
 package edu.uno.cs.tjfs.common;
 
+import edu.uno.cs.tjfs.master.MasterStorage;
+
 import java.nio.file.Path;
 import java.util.List;
 
@@ -36,7 +38,7 @@ public interface IMasterClient {
      * @return list of file descriptors from the log of the actual master
      * @throws TjfsException
      */
-    List<FileDescriptor> getLog(int logID) throws TjfsException;
+    List<MasterStorage.LogItem> getLog(int logID) throws TjfsException;
 
     /**
      * Return a list of files and directories in given directory. Should return empty list when
@@ -45,11 +47,4 @@ public interface IMasterClient {
      * @return list file and directory names. Folders end with a slash (/)
      */
     String[] list(Path path) throws TjfsException;
-
-    /**
-     * Deletes the file with the given path. If the path is a directory throws an exception.
-     * @param path file path
-     * @throws TjfsException if the path doesn't exist or the path is a directory
-     */
-    void delete(Path path) throws TjfsException;
 }

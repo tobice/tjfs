@@ -3,6 +3,7 @@ package edu.uno.cs.tjfs.common;
 import edu.uno.cs.tjfs.common.messages.*;
 import edu.uno.cs.tjfs.common.messages.arguments.*;
 import edu.uno.cs.tjfs.common.zookeeper.IZookeeperClient;
+import edu.uno.cs.tjfs.master.IMasterStorage;
 
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 import java.nio.file.Path;
@@ -47,10 +48,10 @@ public class MasterClient implements IMasterClient {
     }
 
     @Override
-    public List<FileDescriptor> getLog(int logID) throws TjfsException{
-        Request request = new Request(MCommand.GET_LOG, new GetLogRequestArgs(logID));
+    public List<IMasterStorage.LogItem> getLog(int lastVersion) throws TjfsException {
+        Request request = new Request(MCommand.GET_LOG, new GetLogRequestArgs(lastVersion));
         Response response = this.messageClient.send(getMasterServer(), request);
-        return ((GetLogResponseArgs)response.args).logs;
+        return ((GetLogResponseArgs)response.args).log;
     }
 
     @Override
@@ -58,11 +59,5 @@ public class MasterClient implements IMasterClient {
         Request request = new Request(MCommand.LIST_FILE, new ListFileRequestArgs(path));
         Response response = this.messageClient.send(getMasterServer(), request);
         return ((ListFileResponseArgs) response.args).files;
-    }
-
-    @Override
-    public void delete(Path path) throws TjfsException {
-        Request request = new Request(MCommand.DELETE_FILE, new DeleteFileRequestArgs(path));
-        this.messageClient.send(getMasterServer(), request);
     }
 }
