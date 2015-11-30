@@ -62,6 +62,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     }
 
     protected void becomeMaster() {
+        logger.info("Becoming a master");
         amIShadow = false;
         storage.stopReplication();
         storage.startSnapshotting();
@@ -69,6 +70,7 @@ public class MasterServer implements IServer, IZookeeperClient.IMasterServerDown
     }
 
     protected void becomeShadow() {
+        logger.info("Becoming a shadow");
         amIShadow = true;
         storage.stopSnapshotting();
         storage.startReplication(); // the replication will take care of snapshotting as well

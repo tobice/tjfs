@@ -100,6 +100,8 @@ public class MasterStorage implements IMasterStorage {
     public void startReplication() {
         replicationThread = new Thread(() -> {
             try {
+                logger.info("Replication from master started");
+                
                 // Wait first so that the actual master server boots up and registers.
                 Thread.sleep(replicationIntervalTime);
 
@@ -127,6 +129,7 @@ public class MasterStorage implements IMasterStorage {
                 logger.error("Unable the to start replication as fetching snapshot failed.", e);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                logger.info("Replication from master stopped");
                 // Do nothing, we stopped
             }
         });
@@ -145,6 +148,7 @@ public class MasterStorage implements IMasterStorage {
             }
         } catch (InterruptedException e) {
             // Do nothing, we're probably crashing.
+            logger.error("Interrupted while stopping replication");
         }
     }
 
