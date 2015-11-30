@@ -45,15 +45,34 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.12.4</version>
                 <configuration>
-                    <excludes>
-                        <exclude>**/log4j.properties</exclude>
-                    </excludes>
+                    <systemPropertyVariables>
+                        <log4j.configuration>log4j.properties</log4j.configuration>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <mainClass>edu.uno.cs.tjfs.client.ClientLauncher</mainClass>
+                            <classpathPrefix>dependency-jars/</classpathPrefix>
+                        </manifest>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>edu.uno.cs.tjfs.chunkserver.ChunkLauncher</mainClass>
+                            <classpathPrefix>dependency-jars/</classpathPrefix>
+                        </manifest>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>edu.uno.cs.tjfs.master.MasterLauncher</mainClass>
                             <classpathPrefix>dependency-jars/</classpathPrefix>
                         </manifest>
                     </archive>

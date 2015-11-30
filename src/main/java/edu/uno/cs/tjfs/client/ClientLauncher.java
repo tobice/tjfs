@@ -25,11 +25,12 @@ public class ClientLauncher {
             }
         });
 
-        // If the commands are piped in (changes the output slightly)
-        boolean piped = args.length > 0 && args[0].equals("-piped");
+        // Parse commands
+        Machine zookeeper = Machine.fromString(args.length > 0 ? args[0] : "137.30.122.138:2181");
+        boolean piped = args.length > 1 && args[1].equals("-piped");
 
-        // TODO: get the Zookeeper address from the arguments
-        Machine zookeeper = Machine.fromString("137.30.122.138:2181");
+        System.out.println("RUNNING TJFS CLIENT INSTANCE");
+        System.out.println("Configured zookeeper server: " + zookeeper);
 
         // Instantiate the command line client
         cmdClient = CommandLineClient.getInstance(new Config(), zookeeper, System.out);

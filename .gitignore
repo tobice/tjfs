@@ -51,5 +51,8 @@ testChunk
 
 ##Logfiles
 log/
+fs/
+chunks/
+bin/log
 
 target
