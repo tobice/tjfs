@@ -20,8 +20,8 @@ public class ChunkClient implements IChunkClient {
 
     @Override
     public byte[] get(ChunkDescriptor chunkDescriptor) throws TjfsException {
-        if (chunkDescriptor.chunkServers.size() != 2){
-            throw new TjfsException("Invalid number of chunk-severs.");
+        if (chunkDescriptor.chunkServers.size() < 2) {
+            throw new TjfsException("Too little chunk copies available.");
         }
         byte[] result;
         try{
@@ -56,8 +56,8 @@ public class ChunkClient implements IChunkClient {
 
     @Override
     public void put(ChunkDescriptor chunkDescriptor,  byte[] data) throws TjfsException {
-        if (chunkDescriptor.chunkServers.size() != 2)
-            throw new TjfsException("Invalid number of chunk-servers.");
+        if (chunkDescriptor.chunkServers.size() < 2)
+            throw new TjfsException("Too little available chunk servers");
 
         try{
             put(chunkDescriptor.chunkServers.get(0), chunkDescriptor.name, data);

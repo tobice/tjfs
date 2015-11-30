@@ -48,7 +48,7 @@ public class ChunkClientTest {
     @Test
     public void shouldFailWithNoChunkServers() throws TjfsException{
         exception.expect(TjfsException.class);
-        exception.expectMessage("Invalid number of chunk-severs.");
+        exception.expectMessage("Too little chunk copies available");
         this.chunkClient.get(new ChunkDescriptor("0", new LinkedList<Machine>(), 3, 0));
     }
 
