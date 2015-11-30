@@ -38,7 +38,7 @@ class MessageServerWorkerThread extends Thread {
                 try {
                     Request request = parser.fromStream(socketInputStream);
                     Gson gson = CustomGson.create();
-                    logger.info("Processing request" + request.header.name());
+                    logger.info("Processing request " + request.header.name());
                     logger.debug("Header is " + request.header);
                     logger.debug("Json is " + gson.toJson(request.args));
                     logger.debug("Data length is  is " + request.dataLength);
