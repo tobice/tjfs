@@ -17,7 +17,7 @@ public class ClientLauncher {
     protected static CommandLineClient cmdClient;
 
     public static void main(String[] args) throws IOException, ZookeeperException {
-        Logger.getLogger("edu.uno.cs.tjfs.common.messages").setLevel(Level.WARN);
+        Logger.getLogger(MessageClient.class).setLevel(Level.INFO);
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {

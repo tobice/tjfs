@@ -18,9 +18,10 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 public class MessageClient implements IMessageClient {
-    final static Logger logger = BaseLogger.getLogger(Logger.class);
+    final static Logger logger = Logger.getLogger(MessageClient.class);
+
     public Response send(Machine machine, Request request) throws BadRequestException, BadResponseException, ConnectionFailureException, TjfsClientException {
-        logger.info("MessageClient.send - Sending a message to " + machine.ip + " at " + machine.port);
+        logger.info("Sending " + request.header.name() + " request to " + machine);
         InetAddress address;
         Socket socket = null;
         InputStream socketInStream = null;
@@ -77,14 +78,14 @@ public class MessageClient implements IMessageClient {
     }
 
     public void sendAsync(Machine machine, Request request) throws BadRequestException, ConnectionFailureException{
-        logger.trace("MessageClient.SendAsyc - Sending the message asynchronously.");
+        logger.debug("Sending asynchronous " + request.header.name() + " request to " + machine);
         Thread thread = new Thread(() -> {
             try {
                 send(machine, request);
             } catch (Exception e) {
-                logger.error("SendAsync - " + e.getMessage());
+                logger.error("Failed asynchronous " + request.header.name() + " request to " + machine);
             }
-            logger.trace("MessageClient.SendAsyc - Finished sending the message asynchronously.");
+            logger.debug("Finished asynchronous " + request.header.name() + " request to " + machine);
         });
         thread.start();
     }

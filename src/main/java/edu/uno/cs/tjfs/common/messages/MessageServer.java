@@ -30,7 +30,7 @@ public class MessageServer {
         }
         catch (Exception e)
         {
-            logger.error("MessageServer.start - Chunkserver start error " + e.getMessage());
+            logger.error("MessageServer.start - server start error " + e.getMessage());
         }
         finally
         {

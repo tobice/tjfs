@@ -2,6 +2,7 @@ package edu.uno.cs.tjfs.chunkserver;
 
 import edu.uno.cs.tjfs.Config;
 import edu.uno.cs.tjfs.common.*;
+import edu.uno.cs.tjfs.common.messages.MessageClient;
 import edu.uno.cs.tjfs.common.messages.MessageServer;
 import edu.uno.cs.tjfs.common.zookeeper.ZookeeperException;
 import org.apache.log4j.Level;
@@ -13,7 +14,8 @@ import java.nio.file.Paths;
 public class ChunkLauncher {
     final static Logger logger = BaseLogger.getLogger(ChunkLauncher.class);
     public static void main(String[] args){
-        Logger.getLogger("edu.uno.cs.tjfs.common.messages").setLevel(Level.WARN);
+        Logger.getLogger(MessageClient.class).setLevel(Level.INFO);
+        Logger.getLogger(MessageServer.class).setLevel(Level.INFO);
 
         while(true) {
             try {

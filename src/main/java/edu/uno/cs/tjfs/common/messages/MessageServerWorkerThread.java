@@ -13,10 +13,11 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 class MessageServerWorkerThread extends Thread {
+    final static Logger logger = Logger.getLogger(MessageServer.class);
+
     Socket clientSocket;
     int clientID = -1;
     IServer server;
-    final static Logger logger = BaseLogger.getLogger(MessageServerWorkerThread.class);
 
     MessageServerWorkerThread(IServer server, Socket s, int i) {
         this.server = server;
@@ -25,8 +26,8 @@ class MessageServerWorkerThread extends Thread {
     }
 
     public void run() {
-        logger.info("MessageServerWorkerThread.run : Accepted Client : ID - " + clientID + " : Address - "
-                + clientSocket.getInetAddress().getHostName());
+        logger.debug("MessageServerWorkerThread.run : Accepted Client : ID - " + clientID + " : " +
+                "Address - " + clientSocket.getInetAddress().getHostName());
         try {
             //Reading the message from the client
             InputStream socketInputStream = clientSocket.getInputStream();
@@ -37,15 +38,15 @@ class MessageServerWorkerThread extends Thread {
                 try {
                     Request request = parser.fromStream(socketInputStream);
                     Gson gson = CustomGson.create();
-                    logger.info("Processing following request ");
-                    logger.info("Header is " + request.header);
-                    logger.info("Json is " + gson.toJson(request.args));
-                    logger.info("Data length is  is " + request.dataLength);
+                    logger.info("Processing request" + request.header.name());
+                    logger.debug("Header is " + request.header);
+                    logger.debug("Json is " + gson.toJson(request.args));
+                    logger.debug("Data length is  is " + request.dataLength);
                     response = this.server.process(request);
-                    logger.info("Processing following response ");
-                    logger.info("Header is " + response.code);
-                    logger.info("Json is " + gson.toJson(response.args));
-                    logger.info("Data length is  is " + response.dataLength);
+                    logger.debug("Processing following response ");
+                    logger.debug("Header is " + response.code);
+                    logger.debug("Json is " + gson.toJson(response.args));
+                    logger.debug("Data length is  is " + response.dataLength);
                 }catch (Exception e){
                     logger.error("MessageServerWorkerThread.run: Error while processing the chunk. Replying with the error message");
                     logger.error("MessageServerWorkerThread.run: ", e);
@@ -60,6 +61,6 @@ class MessageServerWorkerThread extends Thread {
         } catch (Exception e) {
             logger.error("MessageServerWorkerThread.run : " + clientID);
         }
-        logger.info("MessageServerWorkerThread.run : Finished running the client - ID -> " + clientID);
+        logger.debug("MessageServerWorkerThread.run : Finished running the client - ID -> " + clientID);
     }
 }
