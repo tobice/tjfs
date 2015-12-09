@@ -1,4 +1,4 @@
-# TJFS
+# tjfs
 
 Google FS based distributed file system written by [Tobiáš Potoček](mailto:tobiaspotocek@gmail.com) 
 and [Janak Dahal](mailto:jdahaldev@gmail.com) as a term project for CSCI 6450 at the [University
